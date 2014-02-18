@@ -1,0 +1,23 @@
+{
+    "name": "sugiphp/auth",
+    "type": "library",
+    "description": "SugiPHP Authentication Component",
+    "keywords": ["auth", "login", "register", "logout", "remember me", "sugiphp"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Plamen Popov",
+            "email": "tzappa@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.3"
+    },
+    "autoload": {
+        "psr-0": {
+            "SugiPHP\\Auth\\": ""
+        }
+    },
+    "target-dir": "SugiPHP/Auth",
+    "minimum-stability": "dev"
+}
