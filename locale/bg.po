@@ -74,4 +74,4 @@ msgid "Unknown user state"
 msgstr "Невалидно потребителско състояние"
 
 msgid "Error creating user"
-msgstr "Грешка при създаване на потребителска сметка"
+msgstr "Грешка при създаване на потребител"

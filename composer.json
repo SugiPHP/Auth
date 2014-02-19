@@ -2,7 +2,7 @@
     "name": "sugiphp/auth",
     "type": "library",
     "description": "SugiPHP Authentication Component",
-    "keywords": ["auth", "login", "register", "logout", "remember me", "sugiphp"],
+    "keywords": ["auth", "login", "register", "user", "remember me"],
     "license": "MIT",
     "authors": [
         {

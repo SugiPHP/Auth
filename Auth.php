@@ -28,22 +28,22 @@ class Auth
 	 *
 	 * @param array $config Configuration options
 	 */
-	protected function __construct(array $config = array())
+	public function __construct(array $config = array())
 	{
 		if (!$this instanceof AuthInterface) {
-			throw new Exception("To use Auth you must implement AuthInterface");
+			throw new InternalException("To use Auth you must implement AuthInterface");
 		}
 
 		// Default configuration options
 		$this->config = array(
+			// check for login on construct
+			"auto_check_login"         => true,
 			// Maximum number of login attempts before blocking (only for log in) the user. FALSE means no blocking.
-			"block_logins_after"        => 24,
+			"block_logins_after"       => 24,
 			// If remember me option was checked for how long remember me cookie and DB info should stay in seconds. Defaults to 90 days.
 			"remember_me_time"         => 7776000,
 			// cookie name for persistent logins (remember me)
 			"remember_me_cookie_name"  => "AUTHREME",
-			// check for login on construct
-			"auto_check_login"         => true,
 		);
 
 		// Override default options
@@ -116,10 +116,10 @@ class Auth
 	 *
 	 * @return mixed User's email or NULL if not logged in
 	 */
-	public function getUserEmail()
-	{
-		return $this->getUserData("email");
-	}
+	// public function getUserEmail()
+	// {
+	// 	return $this->getUserData("email");
+	// }
 
 	/**
 	 * Check the user can login with given username and password.
@@ -195,11 +195,13 @@ class Auth
 
 		$this->setUserData("id", $user["id"]);
 		$this->setUserData("username", $username);
-		$this->setUserData("email", $user["email"]);
+		// $this->setUserData("email", $user["email"]);
 
 		if ($remember and $this->config["remember_me_time"] and ($this instanceof RememberMeInterface)) {
 			$this->saveRememberMe($username);
 		}
+
+		return $user;
 	}
 
 	/**
@@ -581,8 +583,8 @@ class Auth
 	/**
 	 * Gets previously stored user data in the session. Override this method to use other storage.
 	 *
-	 * @param  [type] $key     [description]
-	 * @param  [type] $default [description]
+	 * @param  string $key
+	 * @param  mixed  $default
 	 * @return mixed
 	 */
 	protected function getUserData($key, $default = null)
