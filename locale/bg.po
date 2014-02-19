@@ -1,0 +1,77 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: Bulgarian\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Required username is missing"
+msgstr "Моля въведете потребителско име"
+
+msgid "Required password is missing"
+msgstr "Моля въведете парола"
+
+msgid "Username/password mismatch"
+msgstr "Грешно потребителско име/парола"
+
+msgid "Username too short"
+msgstr "Потребителското име е твърде късо"
+
+msgid "Username too long"
+msgstr "Потребителското име е твърде дълго"
+
+msgid "Illegal username"
+msgstr "Невалидно потребителско име"
+
+msgid "User account is blocked"
+msgstr "Потребителската сметка е блокирана"
+
+msgid "User is not logged in"
+msgstr "Потребителят не се е индентифицирал"
+
+msgid "Before login you have to confirm your email address"
+msgstr "Моля потвърдете регистрацията си"
+
+msgid "Access denied. Too many login attempts"
+msgstr "Твърде много опити за вход. Достъпът забранен!"
+
+msgid "User with email provided not found"
+msgstr "Потребител с този email адрес не е намерен"
+
+msgid "Enter your old password"
+msgstr "Въведете старата парола"
+
+msgid "User not found"
+msgstr "Потребителят не е намерен"
+
+msgid "Your old password do not match"
+msgstr "Настоящата парола не съвпада"
+
+msgid "The username provided already exists"
+msgstr "Потребителското име вече съществува"
+
+msgid "There is a user registered with this email"
+msgstr "Има регистриран потребител с този email адрес"
+
+msgid "Username not found"
+msgstr "Потребителското име не е намерено"
+
+msgid "User account is active"
+msgstr "Потребителската сметка е активна"
+
+msgid "Required token parameter is missing"
+msgstr "Липсващ код за активация"
+
+msgid "Invalid activation token"
+msgstr "Грешен активационен код"
+
+msgid "User account is already blocked"
+msgstr "Потребителската сметка е вече блокирана"
+
+msgid "User account is not blocked"
+msgstr "Потребителят не е блокиран"
+
+msgid "Unknown user state"
+msgstr "Невалидно потребителско състояние"
+
+msgid "Error creating user"
+msgstr "Грешка при създаване на потребителска сметка"

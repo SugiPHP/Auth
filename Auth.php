@@ -356,7 +356,7 @@ class Auth
 
 		// check token
 		if (!$token = trim($token)) {
-			throw new Exception("Missing required token parameter", Exception::MISSING_TOKEN);
+			throw new Exception("Required token parameter is missing", Exception::MISSING_TOKEN);
 		}
 
 		// finding user
