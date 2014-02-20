@@ -379,23 +379,31 @@ class Auth
 	 *
 	 * @param  string $username
 	 * @param  string $token
-	 * @param  string|FALSE $password If the user did not provide password on registration this should be set here
+	 * @param  string|NULL $password If the user did not provide password on registration this should be set here
+	 * @param  string|NULL $password2 Checked only $password is not null
 	 * @return mixed user ID on success or FALSE on failure.
 	 */
-	public function activateAccount($username, $token, $password = null)
+	public function activateAccount($username, $token, $password = null, $password2 = null)
 	{
 		// check activation token
 		$user_id = $this->checkToken($username, $token);
 
-		if (is_null($password)) {
+		if (!is_null($password)) {
 			// Check for password strength
 			$this->checkPassStrength($password);
+			if (!$password2) {
+				throw new Exception("Required password confirmation is missing", Exception::MISSING_PASSWORD2);
+			}
+			// check passwords match
+			if ($password2 !== $password) {
+				throw new Exception("Password does not match the confirmation", Exception::DIFFERENT_PASSWORD2);
+			}
 		}
 
 		// Activate user
 		$this->updateState($user_id, self::USER_STATE_ACTIVE);
 
-		if (is_null($password)) {
+		if (!is_null($password)) {
 			// setting up a new password
 			$this->setPassword($user_id, $password);
 		}
