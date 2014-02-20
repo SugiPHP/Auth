@@ -24,8 +24,15 @@ class LoginOnlyAuth extends Auth implements AuthInterface
 		if ($username == "null") {
 			return null;
 		}
+		if ($username == "inact") {
+			$state = Auth::USER_STATE_INACTIVE;
+		} elseif ($username == "blckd") {
+			$state = Auth::USER_STATE_BLOCKED;
+		} else {
+			$state = Auth::USER_STATE_ACTIVE;
+		}
 
-		return array("id" => mt_rand(1, 1000), "username" => $username, "password" => $this->cryptSecret($username."123"), "state" => 1);
+		return array("id" => mt_rand(1, 1000), "username" => $username, "password" => $this->cryptSecret($username."123"), "state" => $state);
 	}
 
 	public function getUserByEmail($email)
@@ -35,8 +42,15 @@ class LoginOnlyAuth extends Auth implements AuthInterface
 		if ($username == "null") {
 			return null;
 		}
+		if ($username == "inact") {
+			$state = Auth::USER_STATE_INACTIVE;
+		} elseif ($username == "blckd") {
+			$state = Auth::USER_STATE_BLOCKED;
+		} else {
+			$state = Auth::USER_STATE_ACTIVE;
+		}
 
-		return array("id" => mt_rand(1, 1000), "username" => $username, "password" => $this->cryptSecret($username."123"), "state" => 1);
+		return array("id" => mt_rand(1, 1000), "username" => $username, "password" => $this->cryptSecret($username."123"), "state" => $state);
 	}
 }
 
@@ -100,13 +114,16 @@ class AuthTest extends PHPUnit_Framework_TestCase
 	{
 		$auth = new LoginOnlyAuth();
 		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::LOGIN_FAILED);
-		$auth->login("foo", "foo");
+		$auth->login("foo", "wrongpass");
 	}
 
 	public function testLoginSuccess()
 	{
 		$auth = new LoginOnlyAuth();
 		$this->assertNotEmpty($user = $auth->login("foo", "foo123"));
+		$this->assertSame("foo", $auth->getUsername());
+		$this->assertFalse("foo2" == $auth->getUsername());
+		$this->assertNotEmpty($auth->getUserId());
 	}
 
 	public function testEmailLoginNoPasswordThrowsException()
@@ -114,6 +131,13 @@ class AuthTest extends PHPUnit_Framework_TestCase
 		$auth = new LoginOnlyAuth();
 		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::MISSING_PASSWORD);
 		$auth->login("foo@example.com", "");
+	}
+
+	public function testEmailLoginEmailMismatch()
+	{
+		$auth = new LoginOnlyAuth();
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::ILLEGAL_EMAIL);
+		$auth->login("null@", "null123");
 	}
 
 	public function testEmailLoginWrongEmail()
@@ -127,12 +151,52 @@ class AuthTest extends PHPUnit_Framework_TestCase
 	{
 		$auth = new LoginOnlyAuth();
 		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::LOGIN_FAILED);
-		$auth->login("foo@example.com", "foo");
+		$auth->login("bar@example.com", "wrongpass");
 	}
 
 	public function testEmailLoginSuccess()
 	{
 		$auth = new LoginOnlyAuth();
-		$this->assertNotEmpty($user = $auth->login("foo@example.com", "foo123"));
+		$this->assertNotEmpty($user = $auth->login("bar@example.com", "bar123"));
+		$this->assertSame("bar", $auth->getUsername());
+		$this->assertFalse("bar2" == $auth->getUsername());
+		$this->assertNotEmpty($auth->getUserId());
+	}
+
+	public function testLogotSuccess()
+	{
+		$auth = new LoginOnlyAuth();
+		$this->assertNotEmpty($user = $auth->login("bar@example.com", "bar123"));
+		$auth->logout();
+		$this->assertEmpty($auth->getUserId());
+		$this->assertEmpty($auth->getUsername());
+	}
+
+	public function testLoginFailNotActiveAccount()
+	{
+		$auth = new LoginOnlyAuth();
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::USER_NOT_ACTIVE);
+		$auth->login("inact", "wrongpass");
+	}
+
+	public function testLoginNotActiveAccount()
+	{
+		$auth = new LoginOnlyAuth();
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::USER_NOT_ACTIVE);
+		$auth->login("inact", "inact123");
+	}
+
+	public function testLoginFailBlockedAccount()
+	{
+		$auth = new LoginOnlyAuth();
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::USER_BLOCKED);
+		$auth->login("blckd", "wrongpass");
+	}
+
+	public function testLoginBlockedAccount()
+	{
+		$auth = new LoginOnlyAuth();
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::USER_BLOCKED);
+		$auth->login("blckd", "blckd123");
 	}
 }

@@ -289,7 +289,7 @@ class Auth
 	}
 
 	/**
-	 * Creating user.
+	 * Creating user without specifying passwords. Password should be set on user activation.
 	 *
 	 * @param  string $username This MUST be unique
 	 * @param  string $email
@@ -303,18 +303,17 @@ class Auth
 		$this->checkUsername($username);
 		// checks email addresses and throws Exception on error
 		$this->checkEmail($email);
-
 		// check username is unique
 		if ($this->getUserByUsername($username)) {
 			throw new Exception("The username provided already exists", Exception::ILLEGAL_USERNAME, "Username $username exists");
 		}
-
+		// check email is unique
 		if ($this->getUserByEmail($email)) {
 			throw new Exception("There is a user registered with this email", Exception::ILLEGAL_EMAIL, "Email $email exists");
 		}
 
 		// create a unique password, which cannot be used for login, but it is used to form unique token for account activation
-		$password =  $this->cryptSecret(mt_rand().uniqid().time());
+		$password = $this->cryptSecret(mt_rand().uniqid().time());
 
 		// insert in the DB and get new user's ID
 		if (!$user_id = $this->addUser($username, $email, $password, self::USER_STATE_INACTIVE)) {
@@ -326,6 +325,89 @@ class Auth
 
 		// return token for account activation via e-mail
 		return array("id" => $user_id, "username" => $username, "email" => $email, "state" => self::USER_STATE_INACTIVE, "token" => $token);
+	}
+
+	/**
+	 * Self user registration.
+	 *
+	 * @param  string $username
+	 * @param  string $email
+	 * @param  string $password
+	 * @param  string $password2 Password confirmation
+	 * @throws Exception On any error
+	 */
+	public function register($username, $email, $password, $password2)
+	{
+		$email = mb_strtolower($email, "UTF-8");
+		// checks username and throws Exception on error
+		$this->checkUsername($username);
+		// checks email addresses and throws Exception on error
+		$this->checkEmail($email);
+		// check password
+		$this->checkPassStrength($password);
+		if (!$password2) {
+			throw new Exception("Required password confirmation is missing", Exception::MISSING_PASSWORD2);
+		}
+		// check passwords match
+		if ($password2 !== $password) {
+			throw new Exception("Password does not match the confirmation", Exception::DIFFERENT_PASSWORD2);
+		}
+		// check username is unique
+		if ($this->getUserByUsername($username)) {
+			throw new Exception("The username provided already exists", Exception::ILLEGAL_USERNAME, "Username $username exists");
+		}
+		// check email is unique
+		if ($this->getUserByEmail($email)) {
+			throw new Exception("There is a user registered with this email", Exception::ILLEGAL_EMAIL, "Email $email exists");
+		}
+
+		$password = $this->cryptSecret($password);
+		// insert in the DB and get new user's ID
+		if (!$user_id = $this->addUser($username, $email, $password, self::USER_STATE_INACTIVE)) {
+			throw new Exception("Error creating user", Exception::UNKNOWN_ERROR, "Error while inserting user in the DB with username $username and email $email");
+		}
+
+		// creating unique token
+		$token = sha1($user_id . $password . $username);
+
+		// return token for account activation via e-mail
+		return array("id" => $user_id, "username" => $username, "email" => $email, "state" => self::USER_STATE_INACTIVE, "token" => $token);
+	}
+
+	/**
+	 * Activates account and sets a new password (if the user does not have a password)
+	 *
+	 * @param  string $username
+	 * @param  string $token
+	 * @param  string|FALSE $password If the user did not provide password on registration this should be set here
+	 * @return mixed user ID on success or FALSE on failure.
+	 */
+	public function activateAccount($username, $token, $password = null)
+	{
+		// check activation token
+		$user_id = $this->checkToken($username, $token);
+
+		if (is_null($password)) {
+			// Check for password strength
+			$this->checkPassStrength($password);
+		}
+
+		// Activate user
+		$this->updateState($user_id, self::USER_STATE_ACTIVE);
+
+		if (is_null($password)) {
+			// setting up a new password
+			$this->setPassword($user_id, $password);
+		}
+
+		// NOTE:
+		//
+		// Here we can automatically sign in the user ONLY if the password is set here.
+		// If the password was supplied in a registration form the token will not change,
+		// and the user could sign in again and again only with the link provided in the mail
+		//
+
+		return $user_id;
 	}
 
 	/**
@@ -355,8 +437,7 @@ class Auth
 
 		$token = sha1($user["id"] . $user["password"] . $user["username"]);
 
-		return array("id" => $user["id"], "username" => $user["username"],
-		             "email" => $user["email"], "state" => $user["state"], "token" => $token);
+		return array("id" => $user["id"], "username" => $user["username"], "email" => $user["email"], "state" => $user["state"], "token" => $token);
 	}
 
 	public function checkToken($username, $token)
@@ -385,31 +466,6 @@ class Auth
 		}
 
 		return $user["id"];
-	}
-
-	/**
-	 * Activates account and sets a new password
-	 *
-	 * @param  string $username
-	 * @param  string $token
-	 * @param  string $password
-	 * @return boolean TRUE on success or FALSE on failure.
-	 */
-	public function activateAccount($username, $token, $password)
-	{
-		// check activation token
-		$user_id = $this->checkToken($username, $token);
-
-		// Check for password strength
-		$this->checkPassStrength($password);
-
-		// Activate user
-		$this->updateState($user_id, self::USER_STATE_ACTIVE);
-
-		// setting up a new password
-		$this->setPassword($user_id, $password);
-
-		return $user_id;
 	}
 
 	public function resetPassword($username, $token, $password)

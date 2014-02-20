@@ -13,6 +13,12 @@ msgstr "Моля въведете email адрес"
 msgid "Required password is missing"
 msgstr "Моля въведете парола"
 
+msgid "Required password confirmation is missing"
+msgstr "Моля въведете потвърждение на паролата"
+
+msgid "Password does not match the confirmation"
+msgstr "Паролата не съответства на потвърждението"
+
 msgid "Username/password mismatch"
 msgstr "Грешно потребителско име/парола"
 
