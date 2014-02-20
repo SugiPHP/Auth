@@ -11,14 +11,6 @@ namespace SugiPHP\Auth;
 interface RegistrationInterface
 {
 	/**
-	 * Invoked by Auth::addUser()
-	 *
-	 * @param  string $username
-	 * @return mixed Returns FALSE if user is not found or array with "id", "username", "password", "state", "email", etc.
-	 */
-	public function getUserByEmail($email);
-
-	/**
 	 * Invoked by Auth::createUser()
 	 *
 	 * @param  string $username

@@ -87,7 +87,7 @@ class Auth
 			// email address could be changed meanwhile
 			$this->setUserData("id", $user["id"]);
 			$this->setUserData("username", $user["username"]);
-			$this->setUserData("email", $user["email"]);
+			// $this->setUserData("email", $user["email"]);
 		}
 	}
 
@@ -122,13 +122,13 @@ class Auth
 	// }
 
 	/**
-	 * Check the user can login with given username and password.
+	 * Check the user can login with given username or email and password.
 	 *
-	 * @param  string  $username
+	 * @param  string  $username/email
 	 * @param  string  $password
 	 * @param  boolean $remember If it's set and RememberMeInterface is implemented then it adds a record in the DB and sets a cookie for a user to be remembered.
 	 *
-	 * @throws Exception If username or password are illegal
+	 * @throws Exception If username/email or password are illegal
 	 * @throws Exception If user not found
 	 * @throws Exception If the user has been blocked (for login) for too many login attempts.
 	 */
@@ -136,8 +136,14 @@ class Auth
 	{
 		$this->flushUserData();
 
-		// checks username and throws Exception on error
-		$this->checkUsername($username);
+		// Login with
+		if ($emailLogin = (strpos($username, "@") > 0)) {
+			// checks email and throws Exception on error
+			$this->checkEmail($username);
+		} else {
+			// checks username and throws Exception on error
+			$this->checkUsername($username);
+		}
 
 		// checks password is set
 		if ( ! $password) {
@@ -145,12 +151,14 @@ class Auth
 		}
 
 		// @see AuthInterface
-		$user = $this->getUserByUsername($username);
+		$user = $emailLogin ? $this->getUserByEmail($username) : $this->getUserByUsername($username);
 
 		// no such user
 		if ( ! $user) {
 			throw new Exception("Username/password mismatch", Exception::LOGIN_FAILED, "User $username not found");
 		}
+
+		$username = $user["username"];
 
 		if ($user["state"] == self::USER_STATE_INACTIVE) {
 			throw new Exception("Before login you have to confirm your email address", Exception::USER_NOT_ACTIVE, "Login attempt for user $username with not confirmed email address");

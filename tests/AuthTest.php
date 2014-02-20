@@ -27,6 +27,17 @@ class LoginOnlyAuth extends Auth implements AuthInterface
 
 		return array("id" => mt_rand(1, 1000), "username" => $username, "password" => $this->cryptSecret($username."123"), "state" => 1);
 	}
+
+	public function getUserByEmail($email)
+	{
+		$username = explode("@", $email)[0];
+
+		if ($username == "null") {
+			return null;
+		}
+
+		return array("id" => mt_rand(1, 1000), "username" => $username, "password" => $this->cryptSecret($username."123"), "state" => 1);
+	}
 }
 
 class AuthTest extends PHPUnit_Framework_TestCase
@@ -75,7 +86,7 @@ class AuthTest extends PHPUnit_Framework_TestCase
 	{
 		$auth = new LoginOnlyAuth();
 		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::MISSING_PASSWORD);
-		$auth->login("five", "");
+		$auth->login("foo", "");
 	}
 
 	public function testLoginWrongUsername()
@@ -89,12 +100,39 @@ class AuthTest extends PHPUnit_Framework_TestCase
 	{
 		$auth = new LoginOnlyAuth();
 		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::LOGIN_FAILED);
-		$auth->login("five", "five");
+		$auth->login("foo", "foo");
 	}
 
 	public function testLoginSuccess()
 	{
 		$auth = new LoginOnlyAuth();
-		$this->assertNotEmpty($user = $auth->login("five", "five123"));
+		$this->assertNotEmpty($user = $auth->login("foo", "foo123"));
+	}
+
+	public function testEmailLoginNoPasswordThrowsException()
+	{
+		$auth = new LoginOnlyAuth();
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::MISSING_PASSWORD);
+		$auth->login("foo@example.com", "");
+	}
+
+	public function testEmailLoginWrongEmail()
+	{
+		$auth = new LoginOnlyAuth();
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::LOGIN_FAILED);
+		$auth->login("null@example.com", "null123");
+	}
+
+	public function testEmailLoginWrongPass()
+	{
+		$auth = new LoginOnlyAuth();
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::LOGIN_FAILED);
+		$auth->login("foo@example.com", "foo");
+	}
+
+	public function testEmailLoginSuccess()
+	{
+		$auth = new LoginOnlyAuth();
+		$this->assertNotEmpty($user = $auth->login("foo@example.com", "foo123"));
 	}
 }

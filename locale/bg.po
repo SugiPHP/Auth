@@ -7,6 +7,9 @@ msgstr ""
 msgid "Required username is missing"
 msgstr "Моля въведете потребителско име"
 
+msgid "Required email is missing"
+msgstr "Моля въведете email адрес"
+
 msgid "Required password is missing"
 msgstr "Моля въведете парола"
 
