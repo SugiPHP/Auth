@@ -227,68 +227,6 @@ class Auth
 	}
 
 	/**
-	 * Generating forgot password token
-	 *
-	 * @param  string $email
-	 * @return array
-	 * @throws AuthException On any error
-	 */
-	public function forgotPassword($email)
-	{
-		$user = $this->getUserByEmail($email);
-
-		if (!$user) {
-			throw new Exception("User with email provided not found", Exception::USER_NOT_FOUND);
-		}
-
-		if ($user["state"] == self::USER_STATE_BLOCKED) {
-			throw new Exception("User account is blocked", Exception::USER_BLOCKED);
-		}
-
-		// make some secret hash for password reset
-		$token = sha1($user["id"] . $user["password"] . $user["username"]);
-
-		return array("id" => $user["id"], "username" => $user["username"], "email" => $user["email"], "state" => $user["state"], "token" => $token);
-	}
-
-	/**
-	 * Changes user's password.
-	 *
-	 * @param  string $old Current user's password
-	 * @param  string $new New user password
-	 * @throws Exception On any error
-	 */
-	public function changePassword($old, $new)
-	{
-		if ( ! $this->getUserId()) {
-			throw new Exception("User is not logged in", Exception::NOT_LOGGED_IN);
-		}
-
-		if ( ! $old = trim($old)) {
-			throw new Exception("Enter your old password", Exception::MISSING_PASSWORD);
-		}
-
-		// Check for new password strength
-		$this->checkPassStrength($new);
-
-		// @see AuthInterface
-		$user = $this->getUserByUsername($this->getUsername());
-
-		// no such user
-		if ( ! $user) {
-			throw new Exception("User not found", Exception::USER_NOT_FOUND, "User $username not found");
-		}
-
-		// check old password
-		if ( ! $this->checkSecret($user["password"], $old)) {
-			throw new Exception("Your old password do not match", Exception::LOGIN_FAILED, "User $username supplied wrong password.");
-		}
-
-		// setting up a new password
-		$this->setPassword($user["id"], $new);
-	}
-
-	/**
 	 * Creating user without specifying passwords. Password should be set on user activation.
 	 *
 	 * @param  string $username This MUST be unique
@@ -334,6 +272,7 @@ class Auth
 	 * @param  string $email
 	 * @param  string $password
 	 * @param  string $password2 Password confirmation
+	 * @return array  User info
 	 * @throws Exception On any error
 	 */
 	public function register($username, $email, $password, $password2)
@@ -381,12 +320,12 @@ class Auth
 	 * @param  string $token
 	 * @param  string|NULL $password If the user did not provide password on registration this should be set here
 	 * @param  string|NULL $password2 Checked only $password is not null
-	 * @return mixed user ID on success or FALSE on failure.
+	 * @return array User info
 	 */
 	public function activateAccount($username, $token, $password = null, $password2 = null)
 	{
 		// check activation token
-		$user_id = $this->checkToken($username, $token);
+		$user = $this->checkToken($username, $token);
 
 		if (!is_null($password)) {
 			// Check for password strength
@@ -400,12 +339,14 @@ class Auth
 			}
 		}
 
-		// Activate user
-		$this->updateState($user_id, self::USER_STATE_ACTIVE);
+		// Activate user. The check is because this method handles reset password requests also
+		if ($user["state"] == self::USER_STATE_INACTIVE) {
+			$this->updateState($user["id"], self::USER_STATE_ACTIVE);
+		}
 
 		if (!is_null($password)) {
 			// setting up a new password
-			$this->setPassword($user_id, $password);
+			$this->setPassword($user["id"], $password);
 		}
 
 		// NOTE:
@@ -415,7 +356,99 @@ class Auth
 		// and the user could sign in again and again only with the link provided in the mail
 		//
 
-		return $user_id;
+		return array("id" => $user["id"], "username" => $user["username"], "email" => $user["email"], "state" => $user["state"]);
+	}
+
+	/**
+	 * Forgot password request.
+	 *
+	 * @param  string $email
+	 * @return array User info
+	 * @throws AuthException On any error
+	 */
+	public function forgotPassword($email)
+	{
+		$this->checkEmail($email);
+
+		$user = $this->getUserByEmail($email);
+
+		if (!$user) {
+			throw new Exception("User with email provided not found", Exception::USER_NOT_FOUND);
+		}
+
+		if ($user["state"] == self::USER_STATE_BLOCKED) {
+			throw new Exception("User account is blocked", Exception::USER_BLOCKED);
+		}
+
+		// make some secret hash for password reset
+		$token = sha1($user["id"] . $user["password"] . $user["username"]);
+
+		return array("id" => $user["id"], "username" => $user["username"], "email" => $user["email"], "state" => $user["state"], "token" => $token);
+	}
+
+	/**
+	 * Reset password request.
+	 *
+	 * @param  string $username
+	 * @param  string $token
+	 * @param  string $password
+	 * @param  string $password2
+	 * @return array  User info
+	 */
+	public function resetPassword($username, $token, $password, $password2)
+	{
+		// cannot send null in activateAccount() method
+		if (is_null($password)) {
+			$password = false;
+		}
+
+		return $this->activateAccount($username, $token, $password, $password2);
+	}
+
+	/**
+	 * Changes user's password.
+	 *
+	 * @param  string $old Current user's password
+	 * @param  string $password New user's password
+	 * @param  string $password2 New user's password confirmation
+	 * @throws Exception On any error
+	 */
+	public function changePassword($old, $password, $password2)
+	{
+		if ( ! $this->getUserId()) {
+			throw new Exception("User is not logged in", Exception::NOT_LOGGED_IN);
+		}
+
+		if ( ! $old = trim($old)) {
+			throw new Exception("Enter your old password", Exception::MISSING_PASSWORD);
+		}
+
+		// Check for password strength
+		$this->checkPassStrength($password);
+		if (!$password2) {
+			throw new Exception("Required password confirmation is missing", Exception::MISSING_PASSWORD2);
+		}
+		// check passwords match
+		if ($password2 !== $password) {
+			throw new Exception("Password does not match the confirmation", Exception::DIFFERENT_PASSWORD2);
+		}
+
+		$username = $this->getUsername();
+		// @see AuthInterface
+		$user = $this->getUserByUsername($username);
+
+		// no such user
+		if ( ! $user) {
+			throw new Exception("User not found", Exception::USER_NOT_FOUND, "User $username not found");
+		}
+
+		// check old password
+		if ( ! $this->checkSecret($user["password"], $old)) {
+			throw new Exception("Your old password do not match", Exception::LOGIN_FAILED, "User $username supplied wrong password.");
+		}
+
+		// setting up a new password
+		$this->setPassword($user["id"], $password);
 	}
 
 	/**
@@ -446,46 +479,6 @@ class Auth
 		$token = sha1($user["id"] . $user["password"] . $user["username"]);
 
 		return array("id" => $user["id"], "username" => $user["username"], "email" => $user["email"], "state" => $user["state"], "token" => $token);
-	}
-
-	public function checkToken($username, $token)
-	{
-		// checks username and throws Exception on error
-		$this->checkUsername($username);
-
-		// check token
-		if (!$token = trim($token)) {
-			throw new Exception("Required token parameter is missing", Exception::MISSING_TOKEN);
-		}
-
-		// finding user
-		if (!$user = $this->getUserByUsername($username)) {
-			throw new Exception("Username not found", Exception::USER_NOT_FOUND, "User with username $username not found");
-		}
-
-		// check user is blocked
-		if ($user["state"] == self::USER_STATE_BLOCKED) {
-			throw new Exception("User account is blocked", Exception::USER_BLOCKED);
-		}
-
-		// check token
-		if ($token != sha1($user["id"] . $user["password"] . $user["username"])) {
-			throw new  Exception("Invalid activation token", Exception::WRONG_TOKEN);
-		}
-
-		return $user["id"];
-	}
-
-	public function resetPassword($username, $token, $password)
-	{
-		// check activation token
-		$user_id = $this->checkToken($username, $token);
-
-		// Check for password strength
-		$this->checkPassStrength($password);
-
-		// setting up a new password
-		$this->setPassword($user_id, $password);
 	}
 
 	/**
@@ -575,6 +568,34 @@ class Auth
 	public function cryptSecret($secret)
 	{
 		return crypt($secret, '$2a$10$' . substr(sha1(mt_rand()), 0, 22));
+	}
+
+	protected function checkToken($username, $token)
+	{
+		// checks username and throws Exception on error
+		$this->checkUsername($username);
+
+		// check token
+		if (!$token = trim($token)) {
+			throw new Exception("Required token parameter is missing", Exception::MISSING_TOKEN);
+		}
+
+		// finding user
+		if (!$user = $this->getUserByUsername($username)) {
+			throw new Exception("Username not found", Exception::USER_NOT_FOUND, "User with username $username not found");
+		}
+
+		// check user is blocked
+		if ($user["state"] == self::USER_STATE_BLOCKED) {
+			throw new Exception("User account is blocked", Exception::USER_BLOCKED);
+		}
+
+		// check token
+		if ($token != sha1($user["id"] . $user["password"] . $user["username"])) {
+			throw new  Exception("Invalid activation token", Exception::WRONG_TOKEN);
+		}
+
+		return $user;
 	}
 
 	/**

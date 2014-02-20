@@ -31,6 +31,9 @@ msgstr "Потребителското име е твърде дълго"
 msgid "Illegal username"
 msgstr "Невалидно потребителско име"
 
+msgid "Illegal email"
+msgstr "Невалидно email адрес"
+
 msgid "User account is blocked"
 msgstr "Потребителската сметка е блокирана"
 
