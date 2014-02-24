@@ -473,12 +473,12 @@ class Auth
 	 */
 	public function resetPassword($username, $token, $password, $password2)
 	{
-		// cannot send null in activateAccount() method
+		// cannot send null in activate() method
 		if (is_null($password)) {
 			$password = false;
 		}
 
-		return $this->activateAccount($username, $token, $password, $password2);
+		return $this->activate($username, $token, $password, $password2);
 	}
 
 	/**
