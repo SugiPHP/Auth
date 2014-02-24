@@ -14,7 +14,7 @@ interface LimitInterface
 	 * Returns the number of failed login attempts.
 	 * Invoked by Auth::checkCredentials()
 	 *
-	 * @param  integer $user_id
+	 * @param  string $username
 	 * @return integer
 	 */
 	public function getLoginAttempts($user_id);
@@ -23,15 +23,15 @@ interface LimitInterface
 	 * Increases number of failed login attempts.
 	 * Invoked by Auth::checkCredentials()
 	 *
-	 * @param integer $user_id
+	 * @param string $username
 	 */
-	public function increaseLoginAttempts($user_id);
+	public function increaseLoginAttempts($username);
 
 	/**
 	 * Resets number (sets to 0) of failed login attempts.
 	 * Invoked by Auth::checkCredentials()
 	 *
-	 * @param integer $user_id
+	 * @param string $username
 	 */
-	public function resetLoginAttempts($user_id);
+	public function resetLoginAttempts($username);
 }

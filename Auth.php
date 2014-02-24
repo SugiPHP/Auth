@@ -168,7 +168,7 @@ class Auth
 		if ($this instanceof LimitInterface) {
 			// how many times user has failed to login.
 			if (!isset($user["login_attempts"])) {
-				$user["login_attempts"] = $this->getLoginAttempts($user["id"]);
+				$user["login_attempts"] = $this->getLoginAttempts($username);
 			}
 
 			// check for failed login attempts
@@ -191,14 +191,14 @@ class Auth
 		// check password
 		if ( ! $this->checkSecret($user["password"], $password)) {
 			if ($this instanceof LimitInterface) {
-				$this->increaseLoginAttempts($user["id"]);
+				$this->increaseLoginAttempts($username);
 			}
 			throw new Exception("Username/password mismatch", Exception::LOGIN_FAILED, "User $username supplied wrong password.");
 		}
 
 		// reset failed login attempts
 		if (($this instanceof LimitInterface) and ($user["login_attempts"] > 0)) {
-			$this->resetLoginAttempts($user["id"]);
+			$this->resetLoginAttempts($username);
 		}
 
 		$this->setUserData("id", $user["id"]);
