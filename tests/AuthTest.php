@@ -175,14 +175,14 @@ class AuthTest extends PHPUnit_Framework_TestCase
 	public function testLoginFailNotActiveAccount()
 	{
 		$auth = new LoginOnlyAuth();
-		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::USER_NOT_ACTIVE);
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::USER_INACTIVE);
 		$auth->login("inact", "wrongpass");
 	}
 
 	public function testLoginNotActiveAccount()
 	{
 		$auth = new LoginOnlyAuth();
-		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::USER_NOT_ACTIVE);
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::USER_INACTIVE);
 		$auth->login("inact", "inact123");
 	}
 

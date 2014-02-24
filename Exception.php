@@ -11,26 +11,26 @@ namespace SugiPHP\Auth;
 class Exception extends \Exception
 {
 	const UNKNOWN_ERROR       = 0;
-	const MISSING_USERNAME    = 1;
-	const MISSING_PASSWORD    = 2;
-	const MISSING_EMAIL       = 3;
-	const ILLEGAL_USERNAME    = 4;
-	const ILLEGAL_PASSWORD    = 5;
-	const ILLEGAL_EMAIL       = 6;
-	const LOGIN_FORBIDDEN     = 8;
-	const LOGIN_FAILED        = 9;
-	const USER_NOT_FOUND      = 10;
-	const MULTIPLE_USERS      = 11;
-	const USER_NOT_ACTIVE     = 12;
-	const USER_NOT_BLOCKED    = 13;
-	const USER_ACTIVE         = 14;
-	const USER_INACTIVE       = 15;
-	const USER_BLOCKED        = 16;
-	const MISSING_TOKEN       = 17;
-	const WRONG_TOKEN         = 18;
+	const USER_ACTIVE         = 1;
+	const USER_INACTIVE       = 2;
+	const USER_BLOCKED        = 3;
+	const MISSING_USERNAME    = 4; // missing username on logins and registration
+	const MISSING_EMAIL       = 5; // missing email on registrations, password reset requests
+	const MISSING_PASSWORD    = 6; // missing password on logins and registrations
+	const MISSING_PASSWORD2   = 7; // missing password confirmation on registration and password changes, password resets and activations
+	const MISSING_TOKEN       = 8;
+	const ILLEGAL_USERNAME    = 9;
+	const ILLEGAL_PASSWORD    = 10;
+	const ILLEGAL_EMAIL       = 11;
+	const ILLEGAL_TOKEN       = 18;
+	const LOGIN_FORBIDDEN     = 12;
+	const LOGIN_FAILED        = 13;
+	const USER_NOT_FOUND      = 14;
+	const MULTIPLE_USERS      = 15;
 	const NOT_LOGGED_IN       = 19;
-	const MISSING_PASSWORD2   = 20;
 	const DIFFERENT_PASSWORD2 = 21;
+	const EXISTING_USERNAME   = 22;
+	const EXISTING_EMAIL      = 23;
 
 
 	/**
