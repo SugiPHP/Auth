@@ -219,6 +219,13 @@ class RegistrationTest extends PHPUnit_Framework_TestCase
 		$auth->logout();
 	}
 
+	public function testBlockUnknownUserTrhowsException()
+	{
+		$auth = new RegistrationAuth();
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::USER_NOT_FOUND);
+		$auth->blockUser("foobar");
+	}
+
 	public function testBlockUser()
 	{
 		$auth = new RegistrationAuth();
@@ -226,6 +233,21 @@ class RegistrationTest extends PHPUnit_Framework_TestCase
 		$auth->blockUser("foobar");
 		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::USER_BLOCKED);
 		$auth->activate("foobar", $user["token"]);
+	}
+
+	public function testBlockBlockedUser()
+	{
+		$auth = new RegistrationAuth();
+		$user = $auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
+		$auth->blockUser("foobar");
+		$auth->blockUser("foobar");
+	}
+
+	public function testUnblockUnknownUserTrhowsException()
+	{
+		$auth = new RegistrationAuth();
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::USER_NOT_FOUND);
+		$auth->unblockUser("foobar");
 	}
 
 	public function testUnblockUser()
@@ -237,27 +259,69 @@ class RegistrationTest extends PHPUnit_Framework_TestCase
 		$auth->activate("foobar", $user["token"]);
 	}
 
-	// public function testRegisterWithoutPassword()
-	// {
-	// 	$auth = new RegistrationAuth();
-	// 	$user = $auth->register("foobar", "foobar@example.com");
-	// }
+	public function testUnblockActiveUser()
+	{
+		$auth = new RegistrationAuth();
+		$user = $auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
+		$auth->unblockUser("foobar");
+	}
 
-	// public function testActivateUserWithoutPassword()
-	// {
+	public function testRegisterWithoutPassword()
+	{
+		$auth = new RegistrationAuth();
+		$user = $auth->register("foobar", "foobar@example.com");
+	}
 
-	// }
+	public function testRegistrationWithoutPasswordAndActivationWithoutPassword()
+	{
+		$auth = new RegistrationAuth();
+		$user = $auth->register("foobar", "foobar@example.com");
+		// TODO: Do we need to throw an exception here?
+		$this->assertNotEmpty($auth->activate("foobar", $user["token"]));
+	}
 
-	// public function testGetActivationToken()
-	// {
-	// 	$auth = new RegistrationAuth();
-	// 	$user = $auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
-	// 	$this->assertSame($user["token"], $auth->getActivationToken("foobar"));
-	// }
+	public function testRegistrationWithoutPasswordAndActivationWithPassword()
+	{
+		$auth = new RegistrationAuth();
+		$user = $auth->register("foobar", "foobar@example.com");
+		$this->assertNotEmpty($auth->activate("foobar", $user["token"], "foobar123", "foobar123"));
+		$this->assertNotEmpty($auth->login("foobar", "foobar123"));
+		$auth->logout();
+	}
 
-	// public function testGetActivationTokenUnknownUser()
-	// {
-	// 	$auth = new RegistrationAuth();
-	// 	$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::DIFFERENT_PASSWORD2);
-	// }
+	public function testGetToken()
+	{
+		$auth = new RegistrationAuth();
+		$user = $auth->register("foobar", "foobar@example.com");
+		$this->assertSame($user["token"], $auth->getToken("foobar"));
+		$this->assertSame($user["token"], $auth->getToken("foobar@example.com"));
+	}
+
+	public function testGetActivationTokenUnknownUserThrowsException()
+	{
+		$auth = new RegistrationAuth();
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::USER_NOT_FOUND);
+		$auth->getToken("foobar");
+	}
+
+	public function testGetActivationTokenUnknownUserEmailThrowsException()
+	{
+		$auth = new RegistrationAuth();
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::USER_NOT_FOUND);
+		$auth->getToken("foobar@example.com");
+	}
+
+	public function testGetActivationTokenBlockedUserTrhowsException()
+	{
+		$auth = new RegistrationAuth();
+		$auth->register("foobar", "foobar@example.com");
+		$auth->blockUser("foobar");
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::USER_BLOCKED);
+		$auth->getToken("foobar");
+	}
+
+	// check set password
+	// check password change (logged in user)
+	// check password reset request
+	// check password reset
 }

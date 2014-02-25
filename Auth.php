@@ -227,31 +227,42 @@ class Auth
 	}
 
 	/**
-	 * Self user registration.
+	 * User registration.
+	 * Can be done by the user providing password, or can be done from administrator without
+	 * providing password. On activation process the user can set his/her password.
 	 *
 	 * @param  string $username
 	 * @param  string $email
-	 * @param  string $password
-	 * @param  string $password2 Password confirmation
+	 * @param  string $password (optional)
+	 * @param  string $password2 Password confirmation (optional)
 	 * @return array  User info
 	 * @throws Exception On any error
 	 */
-	public function register($username, $email, $password, $password2)
+	public function register($username, $email, $password = null, $password2 = null)
 	{
 		$email = mb_strtolower($email, "UTF-8");
 		// checks username and throws Exception on error
 		$this->checkUsername($username);
 		// checks email addresses and throws Exception on error
 		$this->checkEmail($email);
-		// check password
-		$this->checkPassStrength($password);
-		if (!$password2) {
-			throw new Exception("Required password confirmation is missing", Exception::MISSING_PASSWORD2);
+
+		if (!is_null($password)) {
+			// Check for password strength
+			$this->checkPassStrength($password);
+			if (!$password2) {
+				throw new Exception("Required password confirmation is missing", Exception::MISSING_PASSWORD2);
+			}
+			// check passwords match
+			if ($password2 !== $password) {
+				throw new Exception("Password does not match the confirmation", Exception::DIFFERENT_PASSWORD2);
+			}
+			// crypt password
+			$password = $this->cryptSecret($password);
+		} else {
+			// create a unique password, which cannot be used for login, but it is used to form unique token for account activation
+			$password = $this->cryptSecret(mt_rand().uniqid().time());
 		}
-		// check passwords match
-		if ($password2 !== $password) {
-			throw new Exception("Password does not match the confirmation", Exception::DIFFERENT_PASSWORD2);
-		}
+
 		// check username is unique
 		if ($this->getUserByUsername($username)) {
 			throw new Exception("The username provided already exists", Exception::EXISTING_USERNAME, "Username $username exists");
@@ -261,7 +272,6 @@ class Auth
 			throw new Exception("There is a user registered with this email", Exception::EXISTING_EMAIL, "Email $email exists");
 		}
 
-		$password = $this->cryptSecret($password);
 		// insert in the DB and get new user's ID
 		if (!$user_id = $this->addUser($username, $email, $password, self::USER_STATE_INACTIVE)) {
 			throw new Exception("Error creating user", Exception::UNKNOWN_ERROR, "Error while inserting user in the DB with username $username and email $email");
@@ -321,6 +331,41 @@ class Auth
 	}
 
 	/**
+	 * Returns activation / forgot password token for a user
+	 * This is used when a user wants to resend activation email.
+	 *
+	 * @param  string $usernameOrEmail Username or email
+	 * @throws Exception On any error
+	 */
+	public function getToken($usernameOrEmail)
+	{
+		if (strpos($usernameOrEmail, "@") > 0) {
+			$email = $usernameOrEmail;
+			// checks email and throws Exception on error
+			$this->checkEmail($email);
+			// finding user
+			if (!$user = $this->getUserByEmail($email)) {
+				throw new Exception("User email not found", Exception::USER_NOT_FOUND, "User with email $email not found");
+			}
+		} else {
+			$username = $usernameOrEmail;
+			// checks username and throws Exception on error
+			$this->checkUsername($username);
+			// finding user
+			if (!$user = $this->getUserByUsername($username)) {
+				throw new Exception("Username not found", Exception::USER_NOT_FOUND, "User with username $username not found");
+			}
+		}
+
+		// check user is blocked
+		if ($user["state"] == self::USER_STATE_BLOCKED) {
+			throw new Exception("User account is blocked", Exception::USER_BLOCKED);
+		}
+
+		return sha1($user["id"] . $user["password"] . $user["username"]);
+	}
+
+	/**
 	 * Blocks user account. No login, activation, or changing password can be done
 	 *
 	 * @param  string $username
@@ -333,11 +378,6 @@ class Auth
 		// finding user
 		if (!$user = $this->getUserByUsername($username)) {
 			throw new Exception("Username not found", Exception::USER_NOT_FOUND, "User with username $username not found");
-		}
-
-		// check user is blocked
-		if ($user["state"] == self::USER_STATE_BLOCKED) {
-			throw new Exception("User account is already blocked", Exception::USER_BLOCKED);
 		}
 
 		// Activate user
@@ -359,80 +399,8 @@ class Auth
 			throw new Exception("Username not found", Exception::USER_NOT_FOUND, "User with username $username not found");
 		}
 
-		// check user is blocked
-		if ($user["state"] != self::USER_STATE_BLOCKED) {
-			throw new Exception("User account is not blocked", Exception::USER_ACTIVE);
-		}
-
 		// Activate user
 		$this->updateState($user["username"], self::USER_STATE_ACTIVE);
-	}
-
-	/**
-	 * Creating user without specifying passwords. Password should be set on user activation.
-	 *
-	 * @param  string $username This MUST be unique
-	 * @param  string $email
-	 * @return array Associative array with user_id and activation token
-	 * @throws Exception On any error
-	 */
-	public function createUser($username, $email)
-	{
-		$email = mb_strtolower($email, "UTF-8");
-		// checks username and throws Exception on error
-		$this->checkUsername($username);
-		// checks email addresses and throws Exception on error
-		$this->checkEmail($email);
-		// check username is unique
-		if ($this->getUserByUsername($username)) {
-			throw new Exception("The username provided already exists", Exception::ILLEGAL_USERNAME, "Username $username exists");
-		}
-		// check email is unique
-		if ($this->getUserByEmail($email)) {
-			throw new Exception("There is a user registered with this email", Exception::ILLEGAL_EMAIL, "Email $email exists");
-		}
-
-		// create a unique password, which cannot be used for login, but it is used to form unique token for account activation
-		$password = $this->cryptSecret(mt_rand().uniqid().time());
-
-		// insert in the DB and get new user's ID
-		if (!$user_id = $this->addUser($username, $email, $password, self::USER_STATE_INACTIVE)) {
-			throw new Exception("Error creating user", Exception::UNKNOWN_ERROR, "Error while inserting user in the DB with username $username and email $email");
-		}
-
-		// creating unique token
-		$token = sha1($user_id . $password . $username);
-
-		// return token for account activation via e-mail
-		return array("id" => $user_id, "username" => $username, "email" => $email, "state" => self::USER_STATE_INACTIVE, "token" => $token);
-	}
-
-	/**
-	 * This is used when a user wants to resend activation email.
-	 *
-	 * @throws Exception On any error
-	 */
-	public function getActivationToken($username)
-	{
-		// checks username and throws Exception on error
-		$this->checkUsername($username);
-
-		// finding user
-		if (!$user = $this->getUserByUsername($username)) {
-			throw new Exception("Username not found", Exception::USER_NOT_FOUND, "User with username $username not found");
-		}
-
-		// check user is already active
-		if ($user["state"] == self::USER_STATE_ACTIVE) {
-			throw new Exception("User account is active", Exception::USER_ACTIVE);
-		}
-
-		// check user is blocked
-		if ($user["state"] == self::USER_STATE_BLOCKED) {
-			throw new Exception("User account is blocked", Exception::USER_BLOCKED);
-		}
-
-		return sha1($user["id"] . $user["password"] . $user["username"]);
 	}
 
 	/**
