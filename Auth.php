@@ -71,7 +71,7 @@ class Auth
 			$user = $this->getUserByUsername($user);
 			if (!$user) {
 				$this->flushUserData();
-				throw new Exception("User is not logged in", Exception::NOT_LOGGED_IN);
+				throw new Exception("User is not logged in", Exception::NO_USER);
 			}
 
 			if ($user["state"] == self::USER_STATE_BLOCKED) {
@@ -249,13 +249,8 @@ class Auth
 		if (!is_null($password)) {
 			// Check for password strength
 			$this->checkPassStrength($password);
-			if (!$password2) {
-				throw new Exception("Required password confirmation is missing", Exception::MISSING_PASSWORD2);
-			}
-			// check passwords match
-			if ($password2 !== $password) {
-				throw new Exception("Password does not match the confirmation", Exception::DIFFERENT_PASSWORD2);
-			}
+			// Check passwords match
+			$this->checkPasswordConfirmation($password, $password2);
 			// crypt password
 			$password = $this->cryptSecret($password);
 		} else {
@@ -301,23 +296,18 @@ class Auth
 		if (!is_null($password)) {
 			// Check for password strength
 			$this->checkPassStrength($password);
-			if (!$password2) {
-				throw new Exception("Required password confirmation is missing", Exception::MISSING_PASSWORD2);
-			}
-			// check passwords match
-			if ($password2 !== $password) {
-				throw new Exception("Password does not match the confirmation", Exception::DIFFERENT_PASSWORD2);
-			}
+			// Check passwords match
+			$this->checkPasswordConfirmation($password, $password2);
 		}
 
 		// Activate user. The check is because this method handles reset password requests also
 		if ($user["state"] == self::USER_STATE_INACTIVE) {
-			$this->updateState($user["username"], self::USER_STATE_ACTIVE);
+			$this->updateState($username, self::USER_STATE_ACTIVE);
 		}
 
 		if (!is_null($password)) {
 			// setting up a new password
-			$this->setPassword($user["username"], $password);
+			$this->setPassword($username, $password);
 		}
 
 		// NOTE:
@@ -328,6 +318,52 @@ class Auth
 		//
 
 		return array("id" => $user["id"], "username" => $user["username"], "email" => $user["email"], "state" => $user["state"]);
+	}
+
+	/**
+	 * Sets a new user password.
+	 *
+	 * @param  string $username
+	 * @param  string $password
+	 * @throws Exception If password is too weak
+	 */
+	public function setPassword($username, $password)
+	{
+		// @see AuthInterface::updatePassword();
+		$this->updatePassword($username, $this->cryptSecret($password));
+	}
+
+	/**
+	 * Changes user's password.
+	 *
+	 * @param  string $old Current user's password
+	 * @param  string $password New user's password
+	 * @param  string $password2 New user's password confirmation
+	 * @throws Exception On any error
+	 */
+	public function changePassword($old, $password, $password2)
+	{
+		if ( ! $username = $this->getUsername()) {
+			throw new Exception("User is not logged in", Exception::NO_USER);
+		}
+
+		if ( ! $old = trim($old)) {
+			throw new Exception("Enter your old password", Exception::MISSING_OLD_PASSWORD);
+		}
+
+		// Check for password strength
+		$this->checkPassStrength($password);
+		// Check passwords match
+		$this->checkPasswordConfirmation($password, $password2);
+
+		// check old password
+		$user = $this->getUserByUsername($username);
+		if ( ! $this->checkSecret($user["password"], $old)) {
+			throw new Exception("Your old password do not match", Exception::LOGIN_FAILED, "User $username supplied wrong password.");
+		}
+
+		// setting up a new password
+		$this->setPassword($username, $password);
 	}
 
 	/**
@@ -441,74 +477,12 @@ class Auth
 	 */
 	public function resetPassword($username, $token, $password, $password2)
 	{
-		// cannot send null in activate() method
+		// cannot send null in activate() method, so we'll check it here
 		if (is_null($password)) {
-			$password = false;
+			throw new Exception("Required password is missing", Exception::MISSING_PASSWORD);
 		}
 
 		return $this->activate($username, $token, $password, $password2);
-	}
-
-	/**
-	 * Changes user's password.
-	 *
-	 * @param  string $old Current user's password
-	 * @param  string $password New user's password
-	 * @param  string $password2 New user's password confirmation
-	 * @throws Exception On any error
-	 */
-	public function changePassword($old, $password, $password2)
-	{
-		if ( ! $this->getUserId()) {
-			throw new Exception("User is not logged in", Exception::NOT_LOGGED_IN);
-		}
-
-		if ( ! $old = trim($old)) {
-			throw new Exception("Enter your old password", Exception::MISSING_PASSWORD);
-		}
-
-		// Check for password strength
-		$this->checkPassStrength($password);
-		if (!$password2) {
-			throw new Exception("Required password confirmation is missing", Exception::MISSING_PASSWORD2);
-		}
-		// check passwords match
-		if ($password2 !== $password) {
-			throw new Exception("Password does not match the confirmation", Exception::DIFFERENT_PASSWORD2);
-		}
-
-		$username = $this->getUsername();
-		// @see AuthInterface
-		$user = $this->getUserByUsername($username);
-
-		// no such user
-		if ( ! $user) {
-			throw new Exception("User not found", Exception::USER_NOT_FOUND, "User $username not found");
-		}
-
-		// check old password
-		if ( ! $this->checkSecret($user["password"], $old)) {
-			throw new Exception("Your old password do not match", Exception::LOGIN_FAILED, "User $username supplied wrong password.");
-		}
-
-		// setting up a new password
-		$this->setPassword($user["id"], $password);
-	}
-
-	/**
-	 * Sets a new user password.
-	 *
-	 * @param  integer $user_id
-	 * @param  string $password
-	 * @throws Exception If password is too weak
-	 */
-	public function setPassword($user_id, $password)
-	{
-		// Check for password strength
-		$this->checkPassStrength($password);
-
-		// @see AuthInterface::updatePassword();
-		$this->updatePassword($user_id, $this->cryptSecret($password));
 	}
 
 	/**
@@ -701,6 +675,10 @@ class Auth
 	 */
 	protected function checkPassStrength($password)
 	{
+		if ( ! $password = trim($password)) {
+			throw new Exception("Required password is missing", Exception::MISSING_PASSWORD);
+		}
+
 		$len = mb_strlen($password, "UTF-8");
 		if ($len < 7) {
 			throw new Exception("Password must be at least 7 chars", Exception::ILLEGAL_PASSWORD);
@@ -715,6 +693,24 @@ class Auth
 		}
 		if ($diff < 2) {
 			throw new Exception("Password must contain at least 2 different type of chars (lowercase letters, uppercase letters, digits and special symbols)", Exception::ILLEGAL_PASSWORD);
+		}
+	}
+
+	/**
+	 * Checking password confirmation is set and is equal to the password.
+	 *
+	 * @param  string $password  Password
+	 * @param  string $password2 Password confirmation
+	 * @throws Exception if password confirmation is missing, or is not equal to the password
+	 */
+	protected function checkPasswordConfirmation($password, $password2)
+	{
+		if (!$password2) {
+			throw new Exception("Required password confirmation is missing", Exception::MISSING_PASSWORD2);
+		}
+		// check passwords match
+		if ($password2 !== $password) {
+			throw new Exception("Password does not match the confirmation", Exception::DIFFERENT_PASSWORD2);
 		}
 	}
 

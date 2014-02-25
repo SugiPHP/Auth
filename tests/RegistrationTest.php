@@ -16,6 +16,12 @@ class RegistrationAuth extends Auth implements AuthInterface, RegistrationInterf
 {
 	public $usernames = array();
 
+	public function __construct($params = array())
+	{
+		$_SESSION = array();
+		parent::__construct($params);
+	}
+
 	public function getUserByUsername($username)
 	{
 		return isset($this->usernames[$username]) ? $this->usernames[$username] : null;
@@ -52,7 +58,6 @@ class RegistrationTest extends PHPUnit_Framework_TestCase
 {
 	public function testRegistration()
 	{
-		$_SESSION = array();
 		$auth = new RegistrationAuth();
 		$user = $auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
 		$this->assertNotEmpty($user);
@@ -177,8 +182,8 @@ class RegistrationTest extends PHPUnit_Framework_TestCase
 	{
 		$auth = new RegistrationAuth();
 		$user = $auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
-		$auth->activate("foobar", $user["token"], "foo1234", "foo1234");
-		$this->assertNotEmpty($auth->login("foobar", "foo1234"));
+		$auth->activate("foobar", $user["token"], "new1234", "new1234");
+		$this->assertNotEmpty($auth->login("foobar", "new1234"));
 		$auth->logout();
 	}
 
@@ -195,7 +200,7 @@ class RegistrationTest extends PHPUnit_Framework_TestCase
 		$auth = new RegistrationAuth();
 		$user = $auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
 		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::MISSING_PASSWORD2);
-		$auth->activate("foobar", $user["token"], "foo1234", "");
+		$auth->activate("foobar", $user["token"], "new1234", "");
 	}
 
 	public function testActivationWithWrongPasswordConfirmation()
@@ -203,7 +208,7 @@ class RegistrationTest extends PHPUnit_Framework_TestCase
 		$auth = new RegistrationAuth();
 		$user = $auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
 		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::DIFFERENT_PASSWORD2);
-		$auth->activate("foobar", $user["token"], "foo1234", "bar1234");
+		$auth->activate("foobar", $user["token"], "new1234", "bar1234");
 	}
 
 	public function testActivationAndLogin()
@@ -321,7 +326,255 @@ class RegistrationTest extends PHPUnit_Framework_TestCase
 	}
 
 	// check set password
+	public function testSetPassword()
+	{
+		$auth = new RegistrationAuth();
+		$auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
+		$auth->unblockUser("foobar");
+		$user1 = $auth->login("foobar", "foobar123");
+		$auth->logout();
+		$auth->setPassword("foobar", "new1234");
+		$user2 = $auth->login("foobar", "new1234");
+		$auth->logout();
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::LOGIN_FAILED);
+		$auth->login("foobar", "foobar123");
+	}
+
 	// check password change (logged in user)
+	public function testChangePasswordForLoggedInUser()
+	{
+		$auth = new RegistrationAuth();
+		$auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
+		$auth->unblockUser("foobar");
+		// login to change the password
+		$user = $auth->login("foobar", "foobar123");
+		$auth->changePassword("foobar123", "new1234", "new1234");
+		$auth->logout();
+		// checking new password
+		$user = $auth->login("foobar", "new1234");
+		$auth->logout();
+		// login with old pass throws exception
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::LOGIN_FAILED);
+		$auth->login("foobar", "foobar123");
+	}
+
+	// check password change (not logged in user)
+	public function testChangePasswordForNotLoggedInUser()
+	{
+		$auth = new RegistrationAuth();
+		$auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
+		$auth->unblockUser("foobar");
+		// the user should be logged in to change the pass
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::NO_USER);
+		$auth->changePassword("foobar123", "new1234", "new1234");
+	}
+
+	public function testChangePasswordNoCurrentPass()
+	{
+		$auth = new RegistrationAuth();
+		$auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
+		$auth->unblockUser("foobar");
+		// login to change the password
+		$user = $auth->login("foobar", "foobar123");
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::MISSING_OLD_PASSWORD);
+		$auth->changePassword("", "new1234", "new1234");
+	}
+
+	public function testChangePasswordNoNewPass()
+	{
+		$auth = new RegistrationAuth();
+		$auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
+		$auth->unblockUser("foobar");
+		// login to change the password
+		$user = $auth->login("foobar", "foobar123");
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::MISSING_PASSWORD);
+		$auth->changePassword("foobar123", "", "new1234");
+	}
+
+	public function testChangePasswordNoPassConfirmation()
+	{
+		$auth = new RegistrationAuth();
+		$auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
+		$auth->unblockUser("foobar");
+		// login to change the password
+		$user = $auth->login("foobar", "foobar123");
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::MISSING_PASSWORD2);
+		$auth->changePassword("foobar123", "new1234", "");
+	}
+
+	public function testChangePasswordPassTooWeak()
+	{
+		$auth = new RegistrationAuth();
+		$auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
+		$auth->unblockUser("foobar");
+		// login to change the password
+		$user = $auth->login("foobar", "foobar123");
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::ILLEGAL_PASSWORD);
+		$auth->changePassword("foobar123", "1", "1");
+	}
+
+	public function testChangePasswordWrongPassConfirmation()
+	{
+		$auth = new RegistrationAuth();
+		$auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
+		$auth->unblockUser("foobar");
+		// login to change the password
+		$user = $auth->login("foobar", "foobar123");
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::DIFFERENT_PASSWORD2);
+		$auth->changePassword("foobar123", "new1234", "something_different");
+	}
+
+	public function testChangePasswordWrongCurrentPass()
+	{
+		$auth = new RegistrationAuth();
+		$auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
+		$auth->unblockUser("foobar");
+		// login to change the password
+		$user = $auth->login("foobar", "foobar123");
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::LOGIN_FAILED);
+		$auth->changePassword("wrong_pass", "new1234", "new1234");
+	}
+
+	public function testForgotPasswordRequestNoEmail()
+	{
+		$auth = new RegistrationAuth();
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::MISSING_EMAIL);
+		$auth->forgotPassword("");
+	}
+
+	public function testForgotPasswordRequestWrongEmail()
+	{
+		$auth = new RegistrationAuth();
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::ILLEGAL_EMAIL);
+		$auth->forgotPassword("no#mail");
+	}
+
+	public function testForgotPasswordRequestUserNotFound()
+	{
+		$auth = new RegistrationAuth();
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::USER_NOT_FOUND);
+		$auth->forgotPassword("foobar@example.com");
+	}
+
+	public function testForgotPasswordRequestBlockedUser()
+	{
+		$auth = new RegistrationAuth();
+		$auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
+		$auth->blockUser("foobar");
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::USER_BLOCKED);
+		$auth->forgotPassword("foobar@example.com");
+	}
+
 	// check password reset request
-	// check password reset
+	public function testForgotPasswordRequest()
+	{
+		$auth = new RegistrationAuth();
+		$user = $auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
+		$auth->activate("foobar", $user["token"]);
+		$data = $auth->forgotPassword("foobar@example.com");
+		$this->assertNotEmpty($data);
+		$this->assertNotEmpty($data["token"]);
+		$this->assertSame($data["token"], $auth->getToken("foobar"));
+	}
+
+	public function testForgotPasswordRequestInactivedUser()
+	{
+		$auth = new RegistrationAuth();
+		$user = $auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
+		$data = $auth->forgotPassword("foobar@example.com");
+		$this->assertNotEmpty($data);
+		$this->assertNotEmpty($data["token"]);
+		$this->assertSame($data["token"], $auth->getToken("foobar"));
+	}
+
+	public function testResetPasswordNoUsername()
+	{
+		$auth = new RegistrationAuth();
+		$user = $auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
+		$data = $auth->forgotPassword("foobar@example.com");
+		$token = $data["token"];
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::MISSING_USERNAME);
+		$auth->resetPassword("", $token, "new1234", "new1234");
+	}
+
+	public function testResetPasswordUserNotFound()
+	{
+		$auth = new RegistrationAuth();
+		$user = $auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
+		$data = $auth->forgotPassword("foobar@example.com");
+		$token = $data["token"];
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::USER_NOT_FOUND);
+		$auth->resetPassword("nosuchuser", $token, "new1234", "new1234");
+	}
+
+	public function testResetPasswordNoToken()
+	{
+		$auth = new RegistrationAuth();
+		$user = $auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
+		$data = $auth->forgotPassword("foobar@example.com");
+		$token = $data["token"];
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::MISSING_TOKEN);
+		$auth->resetPassword("foobar", "", "new1234", "new1234");
+	}
+
+	public function testResetPasswordWrongToken()
+	{
+		$auth = new RegistrationAuth();
+		$user = $auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
+		$data = $auth->forgotPassword("foobar@example.com");
+		$token = $data["token"];
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::ILLEGAL_TOKEN);
+		$auth->resetPassword("foobar", "wrongtoken", "new1234", "new1234");
+	}
+
+	public function testResetPasswordNoPassword()
+	{
+		$auth = new RegistrationAuth();
+		$user = $auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
+		$data = $auth->forgotPassword("foobar@example.com");
+		$token = $data["token"];
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::MISSING_PASSWORD);
+		$auth->resetPassword("foobar", $token, "", "new1234");
+	}
+
+	public function testResetPasswordPasswordToWeak()
+	{
+		$auth = new RegistrationAuth();
+		$user = $auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
+		$data = $auth->forgotPassword("foobar@example.com");
+		$token = $data["token"];
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::ILLEGAL_PASSWORD);
+		$auth->resetPassword("foobar", $token, "1", "1");
+
+	}
+
+	public function testResetPasswordNoPasswordConfirmation()
+	{
+		$auth = new RegistrationAuth();
+		$user = $auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
+		$data = $auth->forgotPassword("foobar@example.com");
+		$token = $data["token"];
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::MISSING_PASSWORD2);
+		$auth->resetPassword("foobar", $token, "new1234", "");
+	}
+
+	public function testResetPasswordPasswordConfirmationDiffers()
+	{
+		$auth = new RegistrationAuth();
+		$user = $auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
+		$data = $auth->forgotPassword("foobar@example.com");
+		$token = $data["token"];
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::DIFFERENT_PASSWORD2);
+		$auth->resetPassword("foobar", $token, "new1234", "something_different");
+	}
+
+	public function testResetPasswordChangesPassword()
+	{
+		$auth = new RegistrationAuth();
+		$user = $auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
+		$data = $auth->forgotPassword("foobar@example.com");
+		$token = $data["token"];
+		$auth->resetPassword("foobar", $token, "new1234", "new1234");
+		$this->assertNotEmpty($auth->login("foobar", "new1234", "new1234"));
+	}
 }
