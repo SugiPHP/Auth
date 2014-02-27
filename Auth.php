@@ -60,15 +60,15 @@ class Auth
 
 	public function checkLogin()
 	{
-		if (!$user = $this->getUsername()) {
+		if (!$username = $this->getUsername()) {
 			// not logged in (session expired). will check for permanent login (remember me)
 			if ($this->config["remember_me_time"] and $this instanceof RememberMeInterface) {
-				$user = $this->checkRememberMe();
+				$username = $this->checkRememberMe();
 			}
 		}
 
-		if ($user) {
-			$user = $this->getUserByUsername($user);
+		if ($username) {
+			$user = $this->getUserByUsername($username);
 			if (!$user) {
 				$this->flushUserData();
 				throw new Exception("User is not logged in", Exception::NO_USER);
@@ -558,20 +558,20 @@ class Auth
 
 				// check the token is expired
 				if ($data["time"] + $this->config["remember_me_time"] > time()) {
-					$this->saveRememberMe($data["user"]);
+					$this->saveRememberMe($data["username"]);
 
-					return $data["user"];
+					return $data["username"];
 				}
 			}
 		}
 	}
 
-	protected function saveRememberMe($userId)
+	protected function saveRememberMe($username)
 	{
 		$token = $this->genToken();
 		$tokenHash = hash("sha256", $token, false);
+		$this->addRememberMe($tokenHash, time(), $username);
 		$this->setRememberMeCookie($token);
-		$this->addRememberMe($tokenHash, time(), $userId);
 	}
 
 	protected function setRememberMeCookie($token = false)
@@ -584,12 +584,16 @@ class Auth
 			$exp = time() - 153792000;
 		}
 
-		setcookie($this->config["remember_me_cookie_name"], $token, $exp, "/", $_SERVER["HTTP_HOST"], !empty($_SERVER["HTTPS"]), true);
+		if (isset($_SERVER["HTTP_HOST"])) {
+			$this->setcookie($this->config["remember_me_cookie_name"], $token, $exp, "/", $_SERVER["HTTP_HOST"], !empty($_SERVER["HTTPS"]), true);
+		} else {
+			$this->setcookie($this->config["remember_me_cookie_name"], $token, $exp);
+		}
 	}
 
 	protected function getRememberMeCookie()
 	{
-		return filter_input(INPUT_COOKIE, $this->config["remember_me_cookie_name"]);
+		return $this->getcookie($this->config["remember_me_cookie_name"]);
 	}
 
 	/**
@@ -732,5 +736,22 @@ class Auth
 		$code = substr($code, mt_rand(0, strlen($code) - $required_length - 1), $required_length);
 
 		return $code;
+	}
+
+
+	/**
+	 * Cookie adapter for setting cookies
+	 */
+	protected function setcookie($name, $value = null, $expire = 0, $path = null, $domain = null, $secure = false, $httponly = false)
+	{
+		setcookie($name, $value, $expire, $path, $domain, $secure, $httponly);
+	}
+
+	/**
+	 * Cookie adapter for getting cookies
+	 */
+	protected function getcookie($name)
+	{
+		return filter_input(INPUT_COOKIE, $name);
 	}
 }
