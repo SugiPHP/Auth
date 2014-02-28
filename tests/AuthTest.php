@@ -126,6 +126,21 @@ class AuthTest extends PHPUnit_Framework_TestCase
 		$this->assertNotEmpty($auth->getUserId());
 	}
 
+	public function testNotImplementedRememberMeInterfaceThrowsExceptionOnLogin()
+	{
+		$auth = new LoginOnlyAuth();
+		$this->setExpectedException("SugiPHP\Auth\InternalException");
+		$auth->login("foo", "foo123", true);
+	}
+
+	public function testNotImplementedRememberMeInterfaceThrowsExceptionOnRememberMethod()
+	{
+		$auth = new LoginOnlyAuth();
+		$auth->login("foo", "foo123");
+		$this->setExpectedException("SugiPHP\Auth\InternalException");
+		$auth->remember();
+	}
+
 	public function testEmailLoginNoPasswordThrowsException()
 	{
 		$auth = new LoginOnlyAuth();

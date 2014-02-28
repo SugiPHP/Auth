@@ -63,7 +63,7 @@ class Auth
 		if (!$username = $this->getUsername()) {
 			// not logged in (session expired). will check for permanent login (remember me)
 			if ($this->config["remember_me_time"] and $this instanceof RememberMeInterface) {
-				$username = $this->checkRememberMe();
+				$username = $this->checkPersistentLogin();
 			}
 		}
 
@@ -205,8 +205,8 @@ class Auth
 		$this->setUserData("username", $username);
 		// $this->setUserData("email", $user["email"]);
 
-		if ($remember and $this->config["remember_me_time"] and ($this instanceof RememberMeInterface)) {
-			$this->saveRememberMe($username);
+		if ($remember) {
+			$this->remember();
 		}
 
 		return $user;
@@ -218,12 +218,25 @@ class Auth
 	public function logout()
 	{
 		$this->flushUserData();
+		// checks for persistent logins and if found deletes it.
 		if ($token = $this->getRememberMeCookie()) {
 			$this->setRememberMeCookie();
 			if ($this instanceof RememberMeInterface) {
 				$this->deleteRememberMe(hash("sha256", $token, false));
 			}
 		}
+	}
+
+	/**
+	 * Saves logged in user data. Persistent login (aka Remember Me)
+	 */
+	public function remember()
+	{
+		if (!$username = $this->getUserData("username")) {
+			throw new Exception("Cannot remember not logged in user", Exception::NO_USER);
+		}
+
+		$this->saveRememberMe($username);
 	}
 
 	/**
@@ -539,28 +552,24 @@ class Auth
 	/**
 	 * Checks for persistent cookie if it was set with "Remember Me" option.
 	 *
-	 * @return integer User ID
+	 * @return mixed The username or NULL when there is no data for persistent login.
 	 */
-	protected function checkRememberMe()
+	protected function checkPersistentLogin()
 	{
-		// check we want to use remember me or not
-		if ( ! $this->config["remember_me_time"]) {
-			return ;
-		}
-
 		if ($token = $this->getRememberMeCookie()) {
 			$tokenHash = hash("sha256", $token, false);
 			if ($data = $this->getRememberMe($tokenHash)) {
 				// Always delete used token.
 				// Persistent tokens can be used only once!
 				$this->deleteRememberMe($tokenHash);
-				$this->setRememberMeCookie();
 
 				// check the token is expired
 				if ($data["time"] + $this->config["remember_me_time"] > time()) {
 					$this->saveRememberMe($data["username"]);
 
 					return $data["username"];
+				} else {
+					$this->setRememberMeCookie();
 				}
 			}
 		}
@@ -568,6 +577,12 @@ class Auth
 
 	protected function saveRememberMe($username)
 	{
+		if (!$this instanceof RememberMeInterface) {
+			throw new InternalException("To use remember me functionality you must implement RememberMeInterface");
+		}
+		if ($this->config["remember_me_time"] <= 0) {
+			throw new InternalException("Remember Me time is not set or illegal");
+		}
 		$token = $this->genToken();
 		$tokenHash = hash("sha256", $token, false);
 		$this->addRememberMe($tokenHash, time(), $username);
@@ -737,7 +752,6 @@ class Auth
 
 		return $code;
 	}
-
 
 	/**
 	 * Cookie adapter for setting cookies

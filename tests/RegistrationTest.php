@@ -575,6 +575,6 @@ class RegistrationTest extends PHPUnit_Framework_TestCase
 		$data = $auth->forgotPassword("foobar@example.com");
 		$token = $data["token"];
 		$auth->resetPassword("foobar", $token, "new1234", "new1234");
-		$this->assertNotEmpty($auth->login("foobar", "new1234", "new1234"));
+		$this->assertNotEmpty($auth->login("foobar", "new1234"));
 	}
 }

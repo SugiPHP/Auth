@@ -24,7 +24,7 @@ class RememberAuth extends Auth implements AuthInterface, RememberMeInterface
 
 	public function getUserByUsername($username)
 	{
-
+		return array("id" => mt_rand(1, 1000), "username" => $username, "password" => $this->cryptSecret($username."123"), "state" => self::USER_STATE_ACTIVE);
 	}
 
 	public function getUserByEmail($email)
@@ -70,9 +70,9 @@ class RememberAuth extends Auth implements AuthInterface, RememberMeInterface
 		return parent::saveRememberMe($username);
 	}
 
-	public function checkRememberMe()
+	public function checkPersistentLogin()
 	{
-		return parent::checkRememberMe();
+		return parent::checkPersistentLogin();
 	}
 }
 
@@ -88,6 +88,13 @@ class RememberMeTest extends PHPUnit_Framework_TestCase
 		$this->assertEmpty($auth->getcookie("test"));
 	}
 
+	public function testRememberNoLoggedInUserThrowsException()
+	{
+		$auth = new RememberAuth();
+		$this->setExpectedException("SugiPHP\Auth\Exception", "", AuthException::NO_USER);
+		$auth->remember();
+	}
+
 	public function testSaveRememberMeAddsCookie()
 	{
 		$auth = new RememberAuth();
@@ -97,21 +104,58 @@ class RememberMeTest extends PHPUnit_Framework_TestCase
 		$this->assertNotEmpty($auth->getcookie("AUTHREME"));
 	}
 
-
 	public function testSaveRememberMeSavesData()
 	{
 		$auth = new RememberAuth();
 		$auth->saveRememberMe("one");
-		$this->assertNotEmpty($auth->checkRememberMe());
+		$this->assertNotEmpty($auth->checkPersistentLogin());
 	}
 
-	public function testChechRememberMeDestroysOldDataAndSavesNewData()
+	public function testCheckPersistentLoginMeDestroysOldDataAndSavesNewData()
 	{
 		$auth = new RememberAuth();
 		$auth->saveRememberMe("one");
 		$old = $auth->data;
-		$this->assertNotEmpty($auth->checkRememberMe());
+		$this->assertNotEmpty($auth->checkPersistentLogin());
 		$new = $auth->data;
 		$this->assertNotSame($old, $new);
+	}
+
+	public function testLoginAndRemeberMethod()
+	{
+		$auth = new RememberAuth();
+		$auth->login("foo", "foo123");
+		$auth->remember();
+		$this->assertSame("foo", $auth->checkPersistentLogin());
+	}
+
+	public function testLoginWithRememberMe()
+	{
+		$auth = new RememberAuth();
+		$auth->login("foo", "foo123", true);
+		$this->assertSame("foo", $auth->checkPersistentLogin());
+	}
+
+	public function testPersistentLogin()
+	{
+		$auth = new RememberAuth();
+		$auth->login("foo", "foo123", true);
+		// mimics session expiration
+		$_SESSION = array();
+		$this->assertNull($auth->getUsername());
+		$this->assertSame("foo", $auth->checkPersistentLogin());
+		// the user is not logged in
+		$this->assertNull($auth->getUsername());
+		// user logs in
+		$auth->checkLogin();
+		$this->assertSame("foo", $auth->getUsername());
+	}
+
+	public function testLogoutDeletesPersistenLogin()
+	{
+		$auth = new RememberAuth();
+		$auth->login("foo", "foo123", true);
+		$auth->logout();
+		$this->assertNull($auth->checkPersistentLogin());
 	}
 }
