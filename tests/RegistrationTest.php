@@ -61,6 +61,7 @@ class RegistrationTest extends PHPUnit_Framework_TestCase
 		$auth = new RegistrationAuth();
 		$user = $auth->register("foobar", "foobar@example.com", "foobar123", "foobar123");
 		$this->assertNotEmpty($user);
+		$this->assertNotEmpty($user["data"]);
 		$this->assertSame("foobar", $user["username"]);
 		$this->assertSame("foobar@example.com", $user["email"]);
 	}

@@ -17,7 +17,7 @@ interface RegistrationInterface
 	 * @param  string  $email
 	 * @param  string  $passwordHash
 	 * @param  integer $state
-	 * @return FALSE on error
+	 * @return FALSE on error. Any other result will be returned in "data" key
 	 */
 	public function addUser($username, $email, $passwordHash, $state);
 

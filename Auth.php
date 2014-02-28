@@ -69,6 +69,8 @@ class Auth
 
 		if ($username) {
 			$user = $this->getUserByUsername($username);
+			unset($user["password"]);
+
 			if (!$user) {
 				$this->flushUserData();
 				throw new Exception("User is not logged in", Exception::NO_USER);
@@ -189,6 +191,9 @@ class Auth
 			$this->resetLoginAttempts($username);
 		}
 
+		// removing password from the return. If you really want to receive a password you can add additional column with a different name
+		unset($user["password"]);
+
 		$this->setUserData($user);
 
 		if ($remember) {
@@ -218,7 +223,7 @@ class Auth
 	 */
 	public function remember()
 	{
-		if (!$username = $this->getUserData("username")) {
+		if (!$username = $this->getUsername()) {
 			throw new Exception("Cannot remember not logged in user", Exception::NO_USER);
 		}
 

@@ -32,7 +32,7 @@ class LoginOnlyAuth extends Auth implements AuthInterface
 			$state = Auth::USER_STATE_ACTIVE;
 		}
 
-		return array("username" => $username, "password" => $this->cryptSecret($username."123"), "state" => $state);
+		return array("username" => $username, "password" => $this->cryptSecret($username."123"), "state" => $state, "moredata" => "anything");
 	}
 
 	public function getUserByEmail($email)
@@ -50,7 +50,7 @@ class LoginOnlyAuth extends Auth implements AuthInterface
 			$state = Auth::USER_STATE_ACTIVE;
 		}
 
-		return array("username" => $username, "password" => $this->cryptSecret($username."123"), "state" => $state);
+		return array("username" => $username, "password" => $this->cryptSecret($username."123"), "state" => $state, "moredata" => "anything");
 	}
 }
 
@@ -121,9 +121,20 @@ class AuthTest extends PHPUnit_Framework_TestCase
 	{
 		$auth = new LoginOnlyAuth();
 		$this->assertNotEmpty($user = $auth->login("foo", "foo123"));
-		$this->assertNotEmpty($auth->getUser());
+		$this->assertSame("anything", $user["moredata"]);
+		$this->assertFalse(isset($user["password"]));
+	}
+
+	public function testLoginStoresAllData()
+	{
+		$auth = new LoginOnlyAuth();
+		$auth->login("foo", "foo123");
+		$user = $auth->getUser();
+		$this->assertNotEmpty($user);
+		$this->assertSame("foo", $user["username"]);
+		$this->assertSame("anything", $user["moredata"]);
+		$this->assertFalse(isset($user["password"]));
 		$this->assertSame("foo", $auth->getUsername());
-		$this->assertFalse("foo2" == $auth->getUsername());
 	}
 
 	public function testNotImplementedRememberMeInterfaceThrowsExceptionOnLogin()
