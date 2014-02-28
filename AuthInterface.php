@@ -14,7 +14,7 @@ interface AuthInterface
 	 * Invoked by Auth::checkCredentials()
 	 *
 	 * @param  string $username
-	 * @return mixed Returns FALSE if user is not found or array with "id", "username", "password", "state", "email" and optionally "login_attempts"
+	 * @return mixed Returns FALSE if user is not found or array with "username", "password", "state", "email" and optionally "login_attempts"
 	 */
 	public function getUserByUsername($username);
 
@@ -22,7 +22,7 @@ interface AuthInterface
 	 * Invoked by Auth::checkCredentials() and Auth::addUser()
 	 *
 	 * @param  string $username
-	 * @return mixed Returns FALSE if user is not found or array with "id", "username", "password", "state", "email" and optionally "login_attempts"
+	 * @return mixed Returns FALSE if user is not found or array with "username", "password", "state", "email" and optionally "login_attempts"
 	 */
 	public function getUserByEmail($email);
 }

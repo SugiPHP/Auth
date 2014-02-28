@@ -27,7 +27,7 @@ class LimitAuth extends Auth implements AuthInterface, LimitInterface
 			$state = Auth::USER_STATE_ACTIVE;
 		}
 
-		return array("id" => mt_rand(1, 1000), "username" => $username, "password" => $this->cryptSecret($username."123"), "state" => $state);
+		return array("username" => $username, "password" => $this->cryptSecret($username."123"), "state" => $state);
 	}
 
 	public function getUserByEmail($email)
@@ -45,7 +45,7 @@ class LimitAuth extends Auth implements AuthInterface, LimitInterface
 			$state = Auth::USER_STATE_ACTIVE;
 		}
 
-		return array("id" => mt_rand(1, 1000), "username" => $username, "password" => $this->cryptSecret($username."123"), "state" => $state);
+		return array("username" => $username, "password" => $this->cryptSecret($username."123"), "state" => $state);
 	}
 
 	// per user login attempts

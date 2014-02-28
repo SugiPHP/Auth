@@ -35,8 +35,8 @@ class RegistrationAuth extends Auth implements AuthInterface, RegistrationInterf
 	public function addUser($username, $email, $passwordHash, $state)
 	{
 		$id = count($this->usernames) + 1;
-		$this->usernames[$username] = array("id" => $id, "username" => $username, "email" => $email, "password" => $passwordHash, "state" => $state);
-		$this->emails[$email] = array("id" => $id, "username" => $username, "email" => $email, "password" => $passwordHash, "state" => $state);
+		$this->usernames[$username] = array("username" => $username, "email" => $email, "password" => $passwordHash, "state" => $state);
+		$this->emails[$email] = array("username" => $username, "email" => $email, "password" => $passwordHash, "state" => $state);
 
 		return $id;
 	}

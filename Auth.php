@@ -84,10 +84,8 @@ class Auth
 				throw new Exception("Unknown user state", Exception::USER_INACTIVE, "Logged in user $username is not active ({$user["state"]})");
 			}
 
-			// email address could be changed meanwhile
-			$this->setUserData("id", $user["id"]);
-			$this->setUserData("username", $user["username"]);
-			// $this->setUserData("email", $user["email"]);
+			// saves a data in the session
+			$this->setUserData($user);
 		}
 	}
 
@@ -96,9 +94,9 @@ class Auth
 	 *
 	 * @return mixed User's ID or NULL if not logged in
 	 */
-	public function getUserId()
+	public function getUser()
 	{
-		return $this->getUserData("id");
+		return $this->getUserData();
 	}
 
 	/**
@@ -110,16 +108,6 @@ class Auth
 	{
 		return $this->getUserData("username");
 	}
-
-	/**
-	 * Logged in user's email address.
-	 *
-	 * @return mixed User's email or NULL if not logged in
-	 */
-	// public function getUserEmail()
-	// {
-	// 	return $this->getUserData("email");
-	// }
 
 	/**
 	 * Check the user can login with given username or email and password.
@@ -201,9 +189,7 @@ class Auth
 			$this->resetLoginAttempts($username);
 		}
 
-		$this->setUserData("id", $user["id"]);
-		$this->setUserData("username", $username);
-		// $this->setUserData("email", $user["email"]);
+		$this->setUserData($user);
 
 		if ($remember) {
 			$this->remember();
@@ -280,16 +266,16 @@ class Auth
 			throw new Exception("There is a user registered with this email", Exception::EXISTING_EMAIL, "Email $email exists");
 		}
 
-		// insert in the DB and get new user's ID
-		if (!$user_id = $this->addUser($username, $email, $password, self::USER_STATE_INACTIVE)) {
+		// insert in the DB and get new user's ID or some other data that will be returned
+		if (!$data = $this->addUser($username, $email, $password, self::USER_STATE_INACTIVE)) {
 			throw new Exception("Error creating user", Exception::UNKNOWN_ERROR, "Error while inserting user in the DB with username $username and email $email");
 		}
 
 		// creating unique token
-		$token = sha1($user_id . $password . $username);
+		$token = sha1($username . $password . $email);
 
 		// return token for account activation via e-mail
-		return array("id" => $user_id, "username" => $username, "email" => $email, "state" => self::USER_STATE_INACTIVE, "token" => $token);
+		return array("username" => $username, "email" => $email, "state" => self::USER_STATE_INACTIVE, "token" => $token, "data" => $data);
 	}
 
 	/**
@@ -330,7 +316,7 @@ class Auth
 		// and the user could sign in again and again only with the link provided in the mail
 		//
 
-		return array("id" => $user["id"], "username" => $user["username"], "email" => $user["email"], "state" => $user["state"]);
+		return array("username" => $user["username"], "email" => $user["email"], "state" => $user["state"]);
 	}
 
 	/**
@@ -411,7 +397,7 @@ class Auth
 			throw new Exception("User account is blocked", Exception::USER_BLOCKED);
 		}
 
-		return sha1($user["id"] . $user["password"] . $user["username"]);
+		return sha1($user["username"] . $user["password"] . $user["email"]);
 	}
 
 	/**
@@ -474,9 +460,9 @@ class Auth
 		}
 
 		// make some secret hash for password reset
-		$token = sha1($user["id"] . $user["password"] . $user["username"]);
+		$token = sha1($user["username"] . $user["password"] . $user["email"]);
 
-		return array("id" => $user["id"], "username" => $user["username"], "email" => $user["email"], "state" => $user["state"], "token" => $token);
+		return array("username" => $user["username"], "email" => $user["email"], "state" => $user["state"], "token" => $token);
 	}
 
 	/**
@@ -542,7 +528,7 @@ class Auth
 		}
 
 		// check token
-		if ($token != sha1($user["id"] . $user["password"] . $user["username"])) {
+		if ($token != sha1($user["username"] . $user["password"] . $user["email"])) {
 			throw new  Exception("Invalid activation token", Exception::ILLEGAL_TOKEN);
 		}
 
@@ -617,9 +603,13 @@ class Auth
 	 * @param string $key
 	 * @param mixed $value Value to be stored.
 	 */
-	protected function setUserData($key, $value)
+	protected function setUserData($key, $value = null)
 	{
-		$_SESSION["userdata"][$key] = $value;
+		if (is_array($key)) {
+			$_SESSION["userdata"] = $key;
+		} else {
+			$_SESSION["userdata"][$key] = $value;
+		}
 	}
 
 	/**
@@ -637,8 +627,12 @@ class Auth
 	 * @param  mixed  $default
 	 * @return mixed
 	 */
-	protected function getUserData($key, $default = null)
+	protected function getUserData($key = null, $default = null)
 	{
+		if (is_null($key)) {
+			return (isset($_SESSION["userdata"])) ? $_SESSION["userdata"] : $default;
+		}
+
 		return (isset($_SESSION["userdata"][$key])) ? $_SESSION["userdata"][$key] : $default;
 	}
 

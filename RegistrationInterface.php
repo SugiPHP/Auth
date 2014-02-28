@@ -17,7 +17,7 @@ interface RegistrationInterface
 	 * @param  string  $email
 	 * @param  string  $passwordHash
 	 * @param  integer $state
-	 * @return integer Newly created user_id of FALSE on error
+	 * @return FALSE on error
 	 */
 	public function addUser($username, $email, $passwordHash, $state);
 

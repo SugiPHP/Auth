@@ -17,7 +17,7 @@ interface LimitInterface
 	 * @param  string $username
 	 * @return integer
 	 */
-	public function getLoginAttempts($user_id);
+	public function getLoginAttempts($username);
 
 	/**
 	 * Increases number of failed login attempts.
