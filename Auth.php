@@ -28,7 +28,7 @@ class Auth
 	 *
 	 * @param array $config Configuration options
 	 */
-	public function __construct(array $config = array())
+	public function __construct($config = array())
 	{
 		if (!$this instanceof AuthInterface) {
 			throw new InternalException("To use Auth you must implement AuthInterface");
