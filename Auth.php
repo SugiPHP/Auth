@@ -490,6 +490,44 @@ class Auth
 	}
 
 	/**
+	 * Checks a token.
+	 * @param  string $username
+	 * @param  string $token
+	 * @return array  User info
+	 * @throws Excetpion on any error
+	 */
+	public function checkToken($username, $token)
+	{
+		// checks username and throws Exception on error
+		$this->checkUsername($username);
+
+		// check token
+		if (!$token = trim($token)) {
+			throw new Exception("Required token parameter is missing", Exception::MISSING_TOKEN);
+		}
+
+		// finding user
+		if (!$user = $this->getUserByUsername($username)) {
+			// Exception message is not "Username not found", but "Invalid activation token"
+			// for a security reason - we don't want to give information about existence
+			// or not for a particular user
+			throw new Exception("Invalid activation token", Exception::USER_NOT_FOUND, "User with username $username not found");
+		}
+
+		// check user is blocked
+		if ($user["state"] == self::USER_STATE_BLOCKED) {
+			throw new Exception("User account is blocked", Exception::USER_BLOCKED);
+		}
+
+		// check token
+		if ($token != sha1($user["username"] . $user["password"] . $user["email"])) {
+			throw new  Exception("Invalid activation token", Exception::ILLEGAL_TOKEN);
+		}
+
+		return $user;
+	}
+
+	/**
 	 * Compares a secret against a hash.
 	 *
 	 * @param string $hash Secret hash made with cryptSecret() method
@@ -510,34 +548,6 @@ class Auth
 	public function cryptSecret($secret)
 	{
 		return crypt($secret, '$2a$10$' . substr(sha1(mt_rand()), 0, 22));
-	}
-
-	protected function checkToken($username, $token)
-	{
-		// checks username and throws Exception on error
-		$this->checkUsername($username);
-
-		// check token
-		if (!$token = trim($token)) {
-			throw new Exception("Required token parameter is missing", Exception::MISSING_TOKEN);
-		}
-
-		// finding user
-		if (!$user = $this->getUserByUsername($username)) {
-			throw new Exception("Username not found", Exception::USER_NOT_FOUND, "User with username $username not found");
-		}
-
-		// check user is blocked
-		if ($user["state"] == self::USER_STATE_BLOCKED) {
-			throw new Exception("User account is blocked", Exception::USER_BLOCKED);
-		}
-
-		// check token
-		if ($token != sha1($user["username"] . $user["password"] . $user["email"])) {
-			throw new  Exception("Invalid activation token", Exception::ILLEGAL_TOKEN);
-		}
-
-		return $user;
 	}
 
 	/**
