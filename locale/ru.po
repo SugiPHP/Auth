@@ -1,0 +1,89 @@
+# msgid ""
+# msgstr ""
+# "Content-Type: text/plain; charset=UTF-8\n"
+# "Language: Russian\n"
+# "Plural-Forms: nplurals=3; plural=((((n%10) == 1)&&((n%100)!=11))?(0):(((((n%10)>=2)&&((n%10)<=4))&&(((n%100)<10)||((n%100)>=20)))?(1):2));\n"
+
+msgid "Required username is missing"
+msgstr "Введите имя пользователя"
+
+msgid "Required email is missing"
+msgstr "Введите Ваш email-адрес"
+
+msgid "Required password is missing"
+msgstr "Введите пароль"
+
+msgid "Required password confirmation is missing"
+msgstr "Подтвердите пароль"
+
+msgid "Password does not match the confirmation"
+msgstr "Пароль не совпадает с полем подтверждения"
+
+msgid "Username/password mismatch"
+msgstr "Неверное имя потребителя/пароль"
+
+msgid "Username too short"
+msgstr "Слишком короткий логин"
+
+msgid "Username too long"
+msgstr "Слишком долгий логин"
+
+msgid "Illegal username"
+msgstr "Невалидный логин"
+
+msgid "Illegal email"
+msgstr "Невалидный email адрес"
+
+msgid "User account is blocked"
+msgstr "Ваш аккаунт заблокирован"
+
+msgid "User is not logged in"
+msgstr "Пользователь не вошел в систему"
+
+msgid "Before login you have to confirm your email address"
+msgstr "Подтверждение регистрации"
+
+msgid "Access denied. Too many login attempts"
+msgstr "Отказано в доступе. Слишком много попыток входа!"
+
+msgid "User with email provided not found"
+msgstr "Пользователь с этим e-mail не найден"
+
+msgid "Enter your old password"
+msgstr "Введите старый пароль"
+
+msgid "User not found"
+msgstr "Пользователь не найден"
+
+msgid "Your old password do not match"
+msgstr "Пароли не совпадают"
+
+msgid "The username provided already exists"
+msgstr "Пользователь с таким логином уже существует"
+
+msgid "There is a user registered with this email"
+msgstr "Пользователь с таким e-mail уже существует"
+
+msgid "Username not found"
+msgstr "Имя пользователя не найдено"
+
+msgid "User account is active"
+msgstr "Ваш аккаунт активирован"
+
+msgid "Required token parameter is missing"
+msgstr "Отсутствует код активации"
+
+msgid "Invalid activation token"
+msgstr "Неверный код активации"
+
+msgid "User account is already blocked"
+msgstr "Ваш аккаунт заблокирован"
+
+msgid "User account is not blocked"
+msgstr "Пользователь не заблокирован"
+
+msgid "Unknown user state"
+msgstr "Невалидное состояние пользователя"
+
+msgid "Error creating user"
+msgstr "Ошибка при создании пользователя"
