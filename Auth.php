@@ -76,12 +76,12 @@ class Auth
 				throw new Exception("User is not logged in", Exception::NO_USER);
 			}
 
-			if ($user["state"] == self::USER_STATE_BLOCKED) {
+			if ($user["state"] == static::USER_STATE_BLOCKED) {
 				$this->flushUserData();
 				throw new Exception("User account is blocked", Exception::USER_BLOCKED, "Logged in user {$this->getUsername()} is blocked");
 			}
 
-			if ($user["state"] != self::USER_STATE_ACTIVE) {
+			if ($user["state"] != static::USER_STATE_ACTIVE) {
 				$this->flushUserData();
 				throw new Exception("Unknown user state", Exception::USER_INACTIVE, "Logged in user $username is not active ({$user["state"]})");
 			}
@@ -150,7 +150,7 @@ class Auth
 
 		$username = $user["username"];
 
-		if ($user["state"] == self::USER_STATE_INACTIVE) {
+		if ($user["state"] == static::USER_STATE_INACTIVE) {
 			throw new Exception("Before login you have to confirm your email address", Exception::USER_INACTIVE, "Login attempt for user $username with not confirmed email address");
 			// here we can show "resend activation" link
 		}
@@ -172,11 +172,11 @@ class Auth
 			}
 		}
 
-		if ($user["state"] == self::USER_STATE_BLOCKED) {
+		if ($user["state"] == static::USER_STATE_BLOCKED) {
 			throw new Exception("User account is blocked", Exception::USER_BLOCKED, "Login attempt for blocked user $username");
 		}
 
-		if ($user["state"] != self::USER_STATE_ACTIVE) {
+		if ($user["state"] != static::USER_STATE_ACTIVE) {
 			throw new Exception("Unknown user state", Exception::USER_INACTIVE, "Login attempt for user $username with unknown user state ({$user["state"]})");
 		}
 
@@ -274,7 +274,7 @@ class Auth
 		}
 
 		// insert in the DB and get new user's ID or some other data that will be returned
-		if (!$data = $this->addUser($username, $email, $password, self::USER_STATE_INACTIVE)) {
+		if (!$data = $this->addUser($username, $email, $password, static::USER_STATE_INACTIVE)) {
 			throw new Exception("Error creating user", Exception::UNKNOWN_ERROR, "Error while inserting user in the DB with username $username and email $email");
 		}
 
@@ -282,7 +282,7 @@ class Auth
 		$token = sha1($username . $password . $email);
 
 		// return token for account activation via e-mail
-		return array("username" => $username, "email" => $email, "state" => self::USER_STATE_INACTIVE, "token" => $token, "data" => $data);
+		return array("username" => $username, "email" => $email, "state" => static::USER_STATE_INACTIVE, "token" => $token, "data" => $data);
 	}
 
 	/**
@@ -307,8 +307,8 @@ class Auth
 		}
 
 		// Activate user. The check is because this method handles reset password requests also
-		if ($user["state"] == self::USER_STATE_INACTIVE) {
-			$this->updateState($username, self::USER_STATE_ACTIVE);
+		if ($user["state"] == static::USER_STATE_INACTIVE) {
+			$this->updateState($username, static::USER_STATE_ACTIVE);
 		}
 
 		if (!is_null($password)) {
@@ -400,7 +400,7 @@ class Auth
 		}
 
 		// check user is blocked
-		if ($user["state"] == self::USER_STATE_BLOCKED) {
+		if ($user["state"] == static::USER_STATE_BLOCKED) {
 			throw new Exception("User account is blocked", Exception::USER_BLOCKED);
 		}
 
@@ -423,7 +423,7 @@ class Auth
 		}
 
 		// Activate user
-		$this->updateState($user["username"], self::USER_STATE_BLOCKED);
+		$this->updateState($user["username"], static::USER_STATE_BLOCKED);
 	}
 
 	/**
@@ -442,7 +442,7 @@ class Auth
 		}
 
 		// Activate user
-		$this->updateState($user["username"], self::USER_STATE_ACTIVE);
+		$this->updateState($user["username"], static::USER_STATE_ACTIVE);
 	}
 
 	/**
@@ -462,7 +462,7 @@ class Auth
 			throw new Exception("User with email provided not found", Exception::USER_NOT_FOUND);
 		}
 
-		if ($user["state"] == self::USER_STATE_BLOCKED) {
+		if ($user["state"] == static::USER_STATE_BLOCKED) {
 			throw new Exception("User account is blocked", Exception::USER_BLOCKED);
 		}
 
@@ -517,7 +517,7 @@ class Auth
 		}
 
 		// check user is blocked
-		if ($user["state"] == self::USER_STATE_BLOCKED) {
+		if ($user["state"] == static::USER_STATE_BLOCKED) {
 			throw new Exception("User account is blocked", Exception::USER_BLOCKED);
 		}
 
