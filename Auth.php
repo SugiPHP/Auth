@@ -136,7 +136,7 @@ class Auth
 		}
 
 		// checks password is set
-		if ( ! $password) {
+		if (!$password) {
 			throw new Exception("Required password is missing", Exception::MISSING_PASSWORD);
 		}
 
@@ -144,7 +144,7 @@ class Auth
 		$user = $emailLogin ? $this->getUserByEmail($username) : $this->getUserByUsername($username);
 
 		// no such user
-		if ( ! $user) {
+		if (!$user) {
 			throw new Exception("Username/password mismatch", Exception::LOGIN_FAILED, "User $username not found");
 		}
 
@@ -164,9 +164,11 @@ class Auth
 			// check for failed login attempts
 			if ($this->config["block_logins_after"] and ($user["login_attempts"] > $this->config["block_logins_after"])) {
 				// block user
-				throw new Exception("Access denied. Too many login attempts",
-						Exception::LOGIN_FORBIDDEN,
-						"Too many ({$user["login_attempts"]}) login requests (max {$this->config["block_logins_after"]}) for user $username. The user is blocked!");
+				throw new Exception(
+					"Access denied. Too many login attempts",
+					Exception::LOGIN_FORBIDDEN,
+					"Too many ({$user["login_attempts"]}) login requests (max {$this->config["block_logins_after"]}) for user $username. The user is blocked!"
+				);
 			}
 		}
 
@@ -179,7 +181,7 @@ class Auth
 		}
 
 		// check password
-		if ( ! $this->checkSecret($user["password"], $password)) {
+		if (!$this->checkSecret($user["password"], $password)) {
 			if ($this instanceof LimitInterface) {
 				$this->increaseLoginAttempts($username);
 			}
@@ -347,11 +349,11 @@ class Auth
 	 */
 	public function changePassword($old, $password, $password2)
 	{
-		if ( ! $username = $this->getUsername()) {
+		if (!$username = $this->getUsername()) {
 			throw new Exception("User is not logged in", Exception::NO_USER);
 		}
 
-		if ( ! $old = trim($old)) {
+		if (!$old = trim($old)) {
 			throw new Exception("Enter your old password", Exception::MISSING_OLD_PASSWORD);
 		}
 
@@ -362,7 +364,7 @@ class Auth
 
 		// check old password
 		$user = $this->getUserByUsername($username);
-		if ( ! $this->checkSecret($user["password"], $old)) {
+		if (!$this->checkSecret($user["password"], $old)) {
 			throw new Exception("Your old password do not match", Exception::LOGIN_FAILED, "User $username supplied wrong password.");
 		}
 
@@ -659,7 +661,7 @@ class Auth
 	 */
 	protected function checkUsername($username)
 	{
-		if ( ! $username) {
+		if (!$username) {
 			throw new Exception("Required username is missing", Exception::MISSING_USERNAME);
 		}
 		if (mb_strlen($username, "UTF-8") < 3) {
@@ -668,7 +670,7 @@ class Auth
 		if (mb_strlen($username, "UTF-8") > 32) {
 			throw new Exception("Username too long", Exception::ILLEGAL_USERNAME, "Username mismatch - more than 32 chars");
 		}
-		if ( ! preg_match("#^[a-z]([a-z0-9-_\.])+$#i", $username)) {
+		if (!preg_match("#^[a-z]([a-z0-9-_\.])+$#i", $username)) {
 			throw new Exception("Illegal username", Exception::ILLEGAL_USERNAME, "Username contains chars that are not allowed");
 		}
 	}
@@ -681,14 +683,14 @@ class Auth
 	 */
 	protected function checkEmail($email)
 	{
-		if ( ! $email) {
+		if (!$email) {
 			throw new Exception("Required email is missing", Exception::MISSING_EMAIL);
 		}
 		// TODO: this should be in a user's model
 		// if (mb_strlen($email, "UTF-8") > 255) {
 		// 	throw new Exception("Email address too long", Exception::ILLEGAL_EMAIL, "Email mismatch - more than 255 chars");
 		// }
-		if ( ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+		if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 			throw new Exception("Illegal email", Exception::ILLEGAL_EMAIL, "Email mismatch - not an email");
 		}
 	}
@@ -703,7 +705,7 @@ class Auth
 	 */
 	protected function checkPassStrength($password)
 	{
-		if ( ! $password = trim($password)) {
+		if (!$password = trim($password)) {
 			throw new Exception("Required password is missing", Exception::MISSING_PASSWORD);
 		}
 
