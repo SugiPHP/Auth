@@ -62,7 +62,7 @@ class Auth
 	{
 		if (!$username = $this->getUsername()) {
 			// not logged in (session expired). will check for permanent login (remember me)
-			if ($this->config["remember_me_time"] and $this instanceof RememberMeInterface) {
+			if ($this->config["remember_me_time"] && $this instanceof RememberMeInterface) {
 				$username = $this->checkPersistentLogin();
 			}
 		}
@@ -161,7 +161,7 @@ class Auth
 			}
 
 			// check for failed login attempts
-			if ($this->config["block_logins_after"] and ($user["login_attempts"] > $this->config["block_logins_after"])) {
+			if ($this->config["block_logins_after"] && ($user["login_attempts"] > $this->config["block_logins_after"])) {
 				// block user
 				throw new Exception(
 					"Access denied. Too many login attempts",
@@ -188,7 +188,7 @@ class Auth
 		}
 
 		// reset failed login attempts
-		if (($this instanceof LimitInterface) and ($user["login_attempts"] > 0)) {
+		if (($this instanceof LimitInterface) && ($user["login_attempts"] > 0)) {
 			$this->resetLoginAttempts($username);
 		}
 
