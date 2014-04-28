@@ -116,13 +116,12 @@ class Auth
 	 *
 	 * @param  string  $username/email
 	 * @param  string  $password
-	 * @param  boolean $remember If it's set and RememberMeInterface is implemented then it adds a record in the DB and sets a cookie for a user to be remembered.
 	 *
 	 * @throws Exception If username/email or password are illegal
 	 * @throws Exception If user not found
 	 * @throws Exception If the user has been blocked (for login) for too many login attempts.
 	 */
-	public function login($username, $password, $remember = false)
+	public function login($username, $password)
 	{
 		$this->flushUserData();
 
@@ -198,10 +197,6 @@ class Auth
 
 		$this->setUserData($user);
 
-		if ($remember) {
-			$this->remember();
-		}
-
 		return $user;
 	}
 
@@ -222,6 +217,8 @@ class Auth
 
 	/**
 	 * Saves logged in user data. Persistent login (aka Remember Me)
+	 * Works only if RememberMeInterface is implemented.
+	 * Adds a record in the DB and sets a cookie for a user to be remembered.
 	 */
 	public function remember()
 	{

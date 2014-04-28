@@ -137,13 +137,6 @@ class AuthTest extends PHPUnit_Framework_TestCase
 		$this->assertSame("foo", $auth->getUsername());
 	}
 
-	public function testNotImplementedRememberMeInterfaceThrowsExceptionOnLogin()
-	{
-		$auth = new LoginOnlyAuth();
-		$this->setExpectedException("SugiPHP\Auth\InternalException");
-		$auth->login("foo", "foo123", true);
-	}
-
 	public function testNotImplementedRememberMeInterfaceThrowsExceptionOnRememberMethod()
 	{
 		$auth = new LoginOnlyAuth();

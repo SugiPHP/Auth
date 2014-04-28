@@ -129,17 +129,11 @@ class RememberMeTest extends PHPUnit_Framework_TestCase
 		$this->assertSame("foo", $auth->checkPersistentLogin());
 	}
 
-	public function testLoginWithRememberMe()
-	{
-		$auth = new RememberAuth();
-		$auth->login("foo", "foo123", true);
-		$this->assertSame("foo", $auth->checkPersistentLogin());
-	}
-
 	public function testPersistentLogin()
 	{
 		$auth = new RememberAuth();
-		$auth->login("foo", "foo123", true);
+		$auth->login("foo", "foo123");
+		$auth->remember();
 		// mimics session expiration
 		$_SESSION = array();
 		$this->assertNull($auth->getUsername());
@@ -154,7 +148,8 @@ class RememberMeTest extends PHPUnit_Framework_TestCase
 	public function testLogoutDeletesPersistenLogin()
 	{
 		$auth = new RememberAuth();
-		$auth->login("foo", "foo123", true);
+		$auth->login("foo", "foo123");
+		$auth->remember();
 		$auth->logout();
 		$this->assertNull($auth->checkPersistentLogin());
 	}
