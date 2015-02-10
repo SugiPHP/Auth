@@ -1,9 +1,8 @@
 <?php
 /**
- * @package    SugiPHP
- * @subpackage Auth
- * @author     Plamen Popov <tzappa@gmail.com>
- * @license    http://opensource.org/licenses/mit-license.php (MIT License)
+ * @package SugiPHP.Auth
+ * @author  Plamen Popov <tzappa@gmail.com>
+ * @license http://opensource.org/licenses/mit-license.php (MIT License)
  */
 
 namespace SugiPHP\Auth;
@@ -339,9 +338,12 @@ class Auth
 	/**
 	 * Changes user's password.
 	 *
-	 * @param  string $old Current user's password
-	 * @param  string $password New user's password
-	 * @param  string $password2 New user's password confirmation
+	 * @param string $old Current user's password
+	 * @param string $password New user's password
+	 * @param string $password2 New user's password confirmation
+	 *
+	 * @return array User data
+	 *
 	 * @throws Exception On any error
 	 */
 	public function changePassword($old, $password, $password2)
@@ -367,6 +369,8 @@ class Auth
 
 		// setting up a new password
 		$this->setPassword($username, $password);
+
+		return $user;
 	}
 
 	/**
