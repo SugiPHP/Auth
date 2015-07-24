@@ -1,10 +1,9 @@
 <?php
 /**
- * @package    SugiPHP
- * @subpackage Auth
- * @category   tests
- * @author     Plamen Popov <tzappa@gmail.com>
- * @license    http://opensource.org/licenses/mit-license.php (MIT License)
+ * @package  SugiPHP.Auth
+ * @category tests
+ * @author   Plamen Popov <tzappa@gmail.com>
+ * @license  http://opensource.org/licenses/mit-license.php (MIT License)
  */
 
 namespace SugiPHP\Auth;
@@ -56,61 +55,61 @@ namespace SugiPHP\Auth;
 
 class HOTPTest extends \PHPUnit_Framework_TestCase
 {
-	public function testConstructNoParams()
-	{
-		$this->setExpectedException("PHPUnit_Framework_Error");
-		$hotp = new HOTP();
-	}
+    public function testConstructNoParams()
+    {
+        $this->setExpectedException("PHPUnit_Framework_Error");
+        $hotp = new HOTP();
+    }
 
-	public function testGen()
-	{
-		$hotp = new HOTP(new HOTPSecret("3132333435363738393031323334353637383930", HOTPSecret::FORMAT_HEX));
-		$this->assertSame("755224", $hotp->gen(0));
-		$this->assertSame("287082", $hotp->gen(1));
-		$this->assertSame("359152", $hotp->gen(2));
-		$this->assertSame("969429", $hotp->gen(3));
-		$this->assertSame("338314", $hotp->gen(4));
-		$this->assertSame("254676", $hotp->gen(5));
-		$this->assertSame("287922", $hotp->gen(6));
-		$this->assertSame("162583", $hotp->gen(7));
-		$this->assertSame("399871", $hotp->gen(8));
-		$this->assertSame("520489", $hotp->gen(9));
-	}
+    public function testGen()
+    {
+        $hotp = new HOTP(new HOTPSecret("3132333435363738393031323334353637383930", HOTPSecret::FORMAT_HEX));
+        $this->assertSame("755224", $hotp->gen(0));
+        $this->assertSame("287082", $hotp->gen(1));
+        $this->assertSame("359152", $hotp->gen(2));
+        $this->assertSame("969429", $hotp->gen(3));
+        $this->assertSame("338314", $hotp->gen(4));
+        $this->assertSame("254676", $hotp->gen(5));
+        $this->assertSame("287922", $hotp->gen(6));
+        $this->assertSame("162583", $hotp->gen(7));
+        $this->assertSame("399871", $hotp->gen(8));
+        $this->assertSame("520489", $hotp->gen(9));
+    }
 
-	public function testGen8Digits()
-	{
-		$hotp = new HOTP(new HOTPSecret("3132333435363738393031323334353637383930", HOTPSecret::FORMAT_HEX), 8);
-		$this->assertSame("84755224", $hotp->gen(0));
-		$this->assertSame("94287082", $hotp->gen(1));
-		$this->assertSame("37359152", $hotp->gen(2));
-		$this->assertSame("26969429", $hotp->gen(3));
-		$this->assertSame("40338314", $hotp->gen(4));
-		$this->assertSame("68254676", $hotp->gen(5));
-		$this->assertSame("18287922", $hotp->gen(6));
-		$this->assertSame("82162583", $hotp->gen(7));
-		$this->assertSame("73399871", $hotp->gen(8));
-		$this->assertSame("45520489", $hotp->gen(9));
-	}
+    public function testGen8Digits()
+    {
+        $hotp = new HOTP(new HOTPSecret("3132333435363738393031323334353637383930", HOTPSecret::FORMAT_HEX), 8);
+        $this->assertSame("84755224", $hotp->gen(0));
+        $this->assertSame("94287082", $hotp->gen(1));
+        $this->assertSame("37359152", $hotp->gen(2));
+        $this->assertSame("26969429", $hotp->gen(3));
+        $this->assertSame("40338314", $hotp->gen(4));
+        $this->assertSame("68254676", $hotp->gen(5));
+        $this->assertSame("18287922", $hotp->gen(6));
+        $this->assertSame("82162583", $hotp->gen(7));
+        $this->assertSame("73399871", $hotp->gen(8));
+        $this->assertSame("45520489", $hotp->gen(9));
+    }
 
-	public function testCheck0()
-	{
-		$hotp = new HOTP(new HOTPSecret("3132333435363738393031323334353637383930", HOTPSecret::FORMAT_HEX));
-		$this->assertSame(-1, $hotp->check("359152", 0, 0));
-		$this->assertSame(-1, $hotp->check("359152", 1, 0));
-		$this->assertSame(0, $hotp->check("359152", 2, 0));
-		$this->assertSame(-1, $hotp->check("359152", 3, 0));
-		$this->assertSame(-1, $hotp->check("359152", 4, 0));
-		$this->assertSame(-1, $hotp->check("359152", 5, 0));
-	}
+    public function testCheck0()
+    {
+        $hotp = new HOTP(new HOTPSecret("3132333435363738393031323334353637383930", HOTPSecret::FORMAT_HEX));
+        $this->assertSame(-1, $hotp->check("359152", 0, 0));
+        $this->assertSame(-1, $hotp->check("359152", 1, 0));
+        $this->assertSame(0, $hotp->check("359152", 2, 0));
+        $this->assertSame(-1, $hotp->check("359152", 3, 0));
+        $this->assertSame(-1, $hotp->check("359152", 4, 0));
+        $this->assertSame(-1, $hotp->check("359152", 5, 0));
+    }
 
-	public function testCheck1()
-	{
-		$hotp = new HOTP(new HOTPSecret("3132333435363738393031323334353637383930", HOTPSecret::FORMAT_HEX));
-		$this->assertSame(-1, $hotp->check("359152", 0, 1));
-		$this->assertSame(1, $hotp->check("359152", 1, 1));
-		$this->assertSame(0, $hotp->check("359152", 2, 1));
-		$this->assertSame(-1, $hotp->check("359152", 3, 1));
-		$this->assertSame(-1, $hotp->check("359152", 4, 1));
-		$this->assertSame(-1, $hotp->check("359152", 5, 1));
-	}
+    public function testCheck1()
+    {
+        $hotp = new HOTP(new HOTPSecret("3132333435363738393031323334353637383930", HOTPSecret::FORMAT_HEX));
+        $this->assertSame(-1, $hotp->check("359152", 0, 1));
+        $this->assertSame(1, $hotp->check("359152", 1, 1));
+        $this->assertSame(0, $hotp->check("359152", 2, 1));
+        $this->assertSame(-1, $hotp->check("359152", 3, 1));
+        $this->assertSame(-1, $hotp->check("359152", 4, 1));
+        $this->assertSame(-1, $hotp->check("359152", 5, 1));
+    }
 }
