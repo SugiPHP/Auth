@@ -539,7 +539,7 @@ class Auth
 	 */
 	public function checkSecret($hash, $secret)
 	{
-		return ($hash === crypt($secret, substr($hash, 0, 29)));
+		return password_verify($secret, $hash);
 	}
 
 	/**
@@ -550,7 +550,7 @@ class Auth
 	 */
 	public function cryptSecret($secret)
 	{
-		return crypt($secret, '$2a$10$' . substr(sha1(mt_rand()), 0, 22));
+		return password_hash($secret, PASSWORD_BCRYPT);
 	}
 
 	/**
